@@ -8,9 +8,9 @@ func main() {
 	for i := 1; i <= n; i++ {
 		fmt.Scan(&x, &y, &z)
 		if (x <= 20) && (y <= 20) && (z <= 20) {
-			fmt.Printf("Case %d: %s", i, "good")
+			fmt.Printf("Case %d: %s\n", i, "good")
 		} else {
-			fmt.Printf("Case %d: %s", i, "bad")
+			fmt.Printf("Case %d: %s\n", i, "bad")
 		}
 	}
 }

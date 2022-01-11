@@ -11,7 +11,7 @@ func main() {
 	var counter int = 1
 	fmt.Scan(&word)
 	for word != "*" {
-		fmt.Printf("Case %d: %s", counter, words[word])
+		fmt.Printf("Case %d: %s\n", counter, words[word])
 		fmt.Scan(&word)
 		counter++
 	}

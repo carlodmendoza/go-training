@@ -13,6 +13,6 @@ func main() {
 		fmt.Scan(&x, &y, &z)
 		arr = []int{x, y, z}
 		sort.Ints(arr)
-		fmt.Printf("Case %d: %d", i, arr[1])
+		fmt.Printf("Case %d: %d\n", i, arr[1])
 	}
 }

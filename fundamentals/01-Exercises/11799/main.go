@@ -18,6 +18,6 @@ func main() {
 				max = next
 			}
 		}
-		fmt.Printf("Case %d: %d", i, max)
+		fmt.Printf("Case %d: %d\n", i, max)
 	}
 }

@@ -15,7 +15,11 @@ func main() {
 	var counter int = 1
 	fmt.Scan(&word)
 	for word != "#" {
-		fmt.Printf("Case %d: %s", counter, words[word])
+		if val, exists := words[word]; exists {
+			fmt.Printf("Case %d: %s\n", counter, val)
+		} else {
+			fmt.Printf("Case %d: UNKNOWN\n", counter)
+		}
 		fmt.Scan(&word)
 		counter++
 	}

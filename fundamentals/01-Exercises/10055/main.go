@@ -20,5 +20,4 @@ func main() {
 			_, err = fmt.Scan(&x, &y)
 		}
 	}
-
 }
