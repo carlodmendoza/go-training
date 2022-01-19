@@ -1,6 +1,6 @@
-Go Training  (Unit Testing, Deepening Go Concepts)
+# Go Training  (Unit Testing, Deepening Go Concepts)
 
-25 Exercism Problems
+## 25 Exercism Problems
 
 1. Sample ([Hello World](https://exercism.org/tracks/go/exercises/hello-world))
 2. Basics ([Gopher's Gorgeous Lasagna](https://exercism.org/tracks/go/exercises/lasagna))
