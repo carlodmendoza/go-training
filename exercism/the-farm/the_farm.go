@@ -7,11 +7,12 @@ import (
 
 // See types.go for the types defined for this exercise.
 
-// TODO: Define the SillyNephewError type here.
 type SillyNephewError struct {
 	cows int
 }
 
+// Error is a method of SillyNephewError that returns a message
+// in case the number of cows is negative.
 func (e *SillyNephewError) Error() string {
 	return fmt.Sprintf("silly nephew, there cannot be %d cows", e.cows)
 }

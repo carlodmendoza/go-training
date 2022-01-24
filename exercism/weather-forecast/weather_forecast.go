@@ -3,6 +3,7 @@ package weather
 
 // CurrentCondition stores the weather condition.
 var CurrentCondition string
+
 // CurrentLocation stores the given location.
 var CurrentLocation string
 

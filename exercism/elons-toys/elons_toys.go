@@ -2,31 +2,33 @@ package elon
 
 import "fmt"
 
-// TODO: define the 'Drive()' method
+// Drive updates the number of meters driven based on
+// the car's speed, and reduces the battery
+// according to the battery drainage
 func (c *Car) Drive() {
-    if (c.battery >= c.batteryDrain) {
-        c.battery -= c.batteryDrain
-        c.distance += c.speed
-    }
+	if c.battery >= c.batteryDrain {
+		c.battery -= c.batteryDrain
+		c.distance += c.speed
+	}
 }
 
-// TODO: define the 'DisplayDistance() string' method
+// DisplayDistance returns the distance as displayed on
+// the LED display as a string
 func (c Car) DisplayDistance() string {
-    return fmt.Sprintf("Driven %d meters", c.distance)
+	return fmt.Sprintf("Driven %d meters", c.distance)
 }
 
-// TODO: define the 'DisplayBattery() string' method
+// DisplayBattery returns the battery percentage as displayed
+// on the LED display as a string
 func (c Car) DisplayBattery() string {
-    return fmt.Sprintf("Battery at %d%%", c.battery)
+	return fmt.Sprintf("Battery at %d%%", c.battery)
 }
 
-// TODO: define the 'CanFinish(trackDistance int) bool' method
+// CanFinish takes trackDistance as its parameter and returns
+// true if the car can finish the race; otherwise, returns false
 func (c Car) CanFinish(trackDistance int) bool {
-    var runs, batteryLeft int
-    runs = trackDistance / c.speed
-    batteryLeft = c.battery - (runs*c.batteryDrain)
-    if batteryLeft >= 0 {
-        return true
-    } 
-	return false
+	var runs, batteryLeft int
+	runs = trackDistance / c.speed
+	batteryLeft = c.battery - (runs * c.batteryDrain)
+	return batteryLeft >= 0
 }

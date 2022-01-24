@@ -10,21 +10,21 @@ func NewVoteCounter(initialVotes int) *int {
 
 // VoteCount extracts the number of votes from a counter.
 func VoteCount(counter *int) int {
-	if (counter == nil) {
-        return 0
-    }
+	if counter == nil {
+		return 0
+	}
 	return *counter
 }
 
 // IncrementVoteCount increments the value in a vote counter
 func IncrementVoteCount(counter *int, increment int) {
-    *counter += increment
+	*counter += increment
 }
 
 // NewElectionResult creates a new election result
 func NewElectionResult(candidateName string, votes int) *ElectionResult {
-    var er *ElectionResult
-    er = &ElectionResult{Name: candidateName, Votes: votes}
+	var er *ElectionResult
+	er = &ElectionResult{Name: candidateName, Votes: votes}
 	return er
 }
 

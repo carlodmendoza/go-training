@@ -9,15 +9,15 @@ type Chessboard map[string]Rank
 // CountInRank returns how many squares are occupied in the chessboard,
 // within the given rank
 func CountInRank(cb Chessboard, rank string) int {
-    var count int
+	var count int
 	if row, rowExists := cb[rank]; rowExists {
-        for _, col := range row {
-            if col {
-                count++
-            }
-        }
-    	return count
-    }
+		for _, col := range row {
+			if col {
+				count++
+			}
+		}
+		return count
+	}
 	return 0
 }
 
@@ -25,23 +25,23 @@ func CountInRank(cb Chessboard, rank string) int {
 // within the given file
 func CountInFile(cb Chessboard, file int) int {
 	var count int
-    if file >= 1 && file <= 8 {
-        for _, row := range cb {
-            if row[file-1] {
-                count++
-            }
-    	}
-    	return count
-    }
-    return 0
+	if file >= 1 && file <= 8 {
+		for _, row := range cb {
+			if row[file-1] {
+				count++
+			}
+		}
+		return count
+	}
+	return 0
 }
 
 // CountAll should count how many squares are present in the chessboard
 func CountAll(cb Chessboard) int {
-    var sum int
+	var sum int
 	for _, row := range cb {
-        sum += len(row)
-    }
+		sum += len(row)
+	}
 	return sum
 }
 
@@ -49,11 +49,11 @@ func CountAll(cb Chessboard) int {
 func CountOccupied(cb Chessboard) int {
 	var count int
 	for _, row := range cb {
-        for _, col := range row {
-            if col {
-                count++
-            }
-        }
-    }
+		for _, col := range row {
+			if col {
+				count++
+			}
+		}
+	}
 	return count
 }
