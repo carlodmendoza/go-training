@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strings"
 	"sync"
 	"unicode"
 )
@@ -62,7 +63,7 @@ func processFile(fileName string, ch chan map[string]int) {
 	scanner := bufio.NewScanner(file)
 	// get all words separated by spaces
 	scanner.Split(bufio.ScanWords)
-	// for each word, get only valid characters (letters or digits)
+	// for each word, get only valid characters (letters or digits) then convert to lower case
 	for scanner.Scan() {
 		var word string
 		for _, char := range scanner.Text() {
@@ -70,6 +71,7 @@ func processFile(fileName string, ch chan map[string]int) {
 				word += string(char)
 			}
 		}
+		word = strings.ToLower(word)
 		// increment count of word if it's not an empty string
 		if word != "" {
 			wc.Inc(word)
