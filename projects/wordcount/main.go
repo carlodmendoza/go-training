@@ -22,36 +22,41 @@ func (wc *WordCounter) Inc(key string) {
 	wc.mu.Unlock()
 }
 
-// func (wc *WordCounter) Value(key string) int {
-// 	wc.mu.Lock()
-// 	defer wc.mu.Unlock()
-// 	return wc.counts[key]
-// }
+func (wc *WordCounter) Value(key string) int {
+	wc.mu.Lock()
+	defer wc.mu.Unlock()
+	return wc.counts[key]
+}
 
 func main() {
-	counts := make(map[string]int)
-	ch := make(chan map[string]int)
+	wc := WordCounter{counts: make(map[string]int)}
+	ch := make(chan []string)
+	var wordList []string
 	var keys []string
 	// process the files concurrently
 	for _, fileName := range os.Args[1:] {
 		go processFile(fileName, ch)
-		// receive the word counts from channel then update main counter
-		for k, v := range <-ch {
-			counts[k] += v
-		}
+	}
+	// receive the list of words from channel then append to main list
+	for range os.Args[1:] {
+		wordList = append(wordList, <-ch...)
+	}
+	// count the words concurrently
+	for _, word := range wordList {
+		go wc.Inc(word)
 	}
 	// list the keys in alphabetical order then print it and its corresponding value
-	for k := range counts {
+	for k := range wc.counts {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, k := range keys {
-		fmt.Println(k, counts[k])
+		fmt.Println(k, wc.Value(k))
 	}
 }
 
-func processFile(fileName string, ch chan map[string]int) {
-	wc := WordCounter{counts: make(map[string]int)}
+func processFile(fileName string, ch chan []string) {
+	var words []string
 	// open file
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -72,14 +77,14 @@ func processFile(fileName string, ch chan map[string]int) {
 			}
 		}
 		word = strings.ToLower(word)
-		// increment count of word if it's not an empty string
+		// append word to array if it's not an empty string
 		if word != "" {
-			wc.Inc(word)
+			words = append(words, word)
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatalf("Failed to parse file: %s", err)
 	}
-	// send the word counts to the channel
-	ch <- wc.counts
+	// send the word array to the channel
+	ch <- words
 }
