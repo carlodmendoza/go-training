@@ -12,6 +12,8 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
+// handler prints to a writer the required output
+// or error depending on the input
 func handler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/solve" {
 		if err := r.ParseForm(); err != nil {
@@ -37,16 +39,21 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getDeterminantOf2x2 returns the determinant of a 2x2 matrix
 func getDeterminantOf2x2(a, b, c, d float64) float64 {
 	return a*d - b*c
 }
 
+// getDeterminantOf3x3 returns the determinant of a 3x3 matrix
 func getDeterminantOf3x3(m [3][3]float64) float64 {
 	return m[0][0]*getDeterminantOf2x2(m[1][1], m[2][1], m[1][2], m[2][2]) -
 		m[1][0]*getDeterminantOf2x2(m[0][1], m[2][1], m[0][2], m[2][2]) +
 		m[2][0]*getDeterminantOf2x2(m[0][1], m[1][1], m[0][2], m[1][2])
 }
 
+// replaceColIn3x3 replaces the values of a column of 3x3 matrix
+// given the column index, three numbers, and the matrix itself.
+// It returns a copy of the new matrix
 func replaceColIn3x3(m [3][3]float64, colIndex int, c1, c2, c3 float64) [3][3]float64 {
 	var newM [3][3]float64
 	for i := range newM {
@@ -66,6 +73,8 @@ func replaceColIn3x3(m [3][3]float64, colIndex int, c1, c2, c3 float64) [3][3]fl
 	return newM
 }
 
+// fmtFloat returns the formatted string of a
+// given floating-point number
 func fmtFloat(num float64) string {
 	if num == float64(int(num)) {
 		return strconv.Itoa(int(num))
@@ -73,8 +82,12 @@ func fmtFloat(num float64) string {
 	return strconv.FormatFloat(num, 'f', 2, 64)
 }
 
+// computeThreeUnknowns solves a system of three equations
+// with three variables using Cramer's Rule. It returns an output
+// string which has the system of equations and its solution.
 func computeThreeUnknowns(m [3][3]float64, c1, c2, c3 float64) string {
 	var D, Dx, Dy, Dz, x, y, z float64
+	var output string
 	DxM := replaceColIn3x3(m, 0, c1, c2, c3)
 	DyM := replaceColIn3x3(m, 1, c1, c2, c3)
 	DzM := replaceColIn3x3(m, 2, c1, c2, c3)
@@ -84,26 +97,28 @@ func computeThreeUnknowns(m [3][3]float64, c1, c2, c3 float64) string {
 	Dy = getDeterminantOf3x3(DyM)
 	Dz = getDeterminantOf3x3(DzM)
 
+	output += fmt.Sprintf("system:\n"+
+		"%sx + %sy + %sz = %s\n"+
+		"%sx + %sy + %sz = %s\n"+
+		"%sx + %sy + %sz = %s\n\n",
+		fmtFloat(m[0][0]), fmtFloat(m[0][1]), fmtFloat(m[0][2]), fmtFloat(c1),
+		fmtFloat(m[1][0]), fmtFloat(m[1][1]), fmtFloat(m[1][2]), fmtFloat(c2),
+		fmtFloat(m[2][0]), fmtFloat(m[2][1]), fmtFloat(m[2][2]), fmtFloat(c3),
+	)
 	if D == 0 {
 		if Dx == 0 && Dy == 0 && Dz == 0 {
-			return "dependent - with multiple solutions"
+			output += "dependent - with multiple solutions"
 		} else {
-			return "inconsistent - no solution"
+			output += "inconsistent - no solution"
 		}
 	} else {
 		x = Dx / D
 		y = Dy / D
 		z = Dz / D
-		return fmt.Sprintf("system:\n"+
-			"%sx + %sy + %sz = %s\n"+
-			"%sx + %sy + %sz = %s\n"+
-			"%sx + %sy + %sz = %s\n\n"+
-			"solution:\n"+
+		output += fmt.Sprintf("solution:\n"+
 			"x = %s, y = %s, z = %s",
-			fmtFloat(m[0][0]), fmtFloat(m[0][1]), fmtFloat(m[0][2]), fmtFloat(c1),
-			fmtFloat(m[1][0]), fmtFloat(m[1][1]), fmtFloat(m[1][2]), fmtFloat(c2),
-			fmtFloat(m[2][0]), fmtFloat(m[2][1]), fmtFloat(m[2][2]), fmtFloat(c3),
 			fmtFloat(x), fmtFloat(y), fmtFloat(z),
 		)
 	}
+	return output
 }
