@@ -35,7 +35,7 @@ func (db *Database) handler() http.HandlerFunc {
 		if r.URL.Path == "/contacts" {
 			db.process(w, r)
 		} else if n, _ := fmt.Sscanf(r.URL.Path, "/contacts/%d", &id); n == 1 {
-			// db.processID(id, w, r)
+			db.processID(id, w, r)
 		} else {
 			fmt.Fprintln(w, "Invalid URL or request")
 		}
@@ -44,6 +44,11 @@ func (db *Database) handler() http.HandlerFunc {
 
 func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(db.records); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	case "POST":
 		var contact Contact
 		if err := json.NewDecoder(r.Body).Decode(&contact); err != nil {
@@ -54,7 +59,7 @@ func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusConflict)
 			w.Header().Set("Content-Type", "application/json")
 			respBody := formatResponseBody(false, "Contact already exists.", con)
-			fmt.Fprintf(w, respBody)
+			fmt.Fprintln(w, respBody)
 			return
 		}
 		db.mu.Lock()
@@ -62,20 +67,81 @@ func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 		contact.ID = db.nextID
 		db.records = append(db.records, contact)
 		db.mu.Unlock()
+
 		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "application/json")
 		respBody := formatResponseBody(true, "Contact added successfully!", &contact)
-		fmt.Fprintf(w, respBody)
-	case "GET":
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(db.records); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		fmt.Fprintln(w, respBody)
 	case "PUT":
 		http.Error(w, "Error: method not allowed", 405)
 	case "DELETE":
 		http.Error(w, "Error: method not allowed", 405)
 	}
+}
+
+func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		if con, _, ok := db.retrieveContactById(id); ok {
+			if err := json.NewEncoder(w).Encode(&con); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			http.Error(w, "Error: record not found", 404)
+		}
+	case "POST":
+		http.Error(w, "Error: method not allowed", 405)
+	case "PUT":
+		if con, index, ok := db.retrieveContactById(id); ok {
+			var contact Contact
+			contact.ID = con.ID
+			if err := json.NewDecoder(r.Body).Decode(&contact); err != nil {
+				http.Error(w, "Error: "+err.Error(), http.StatusBadRequest)
+				return
+			}
+			db.mu.Lock()
+			db.records[index] = contact
+			db.mu.Unlock()
+
+			w.Header().Set("Content-Type", "application/json")
+			respBody := formatResponseBody(true, "Contact updated successfully!", &contact)
+			fmt.Fprintln(w, respBody)
+		} else {
+			http.Error(w, "Error: record not found", 404)
+		}
+	case "DELETE":
+		if _, _, ok := db.retrieveContactById(id); ok {
+			db.deleteContactById(id)
+			w.Header().Set("Content-Type", "application/json")
+			respBody := fmt.Sprintf(
+				"{\"success\": %t,\"message\": \"%s\"}",
+				true, "Contact deleted successfully.")
+			fmt.Fprintln(w, respBody)
+		} else {
+			http.Error(w, "Error: record not found", 404)
+		}
+	}
+}
+
+func (db *Database) deleteContactById(id int) {
+	db.mu.Lock()
+	for i, rec := range db.records {
+		if rec.ID == id {
+			db.records = append(db.records[:i], db.records[i+1:]...)
+		}
+	}
+	db.mu.Unlock()
+}
+
+func (db *Database) retrieveContactById(id int) (*Contact, int, bool) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	for i, rec := range db.records {
+		if rec.ID == id {
+			return &rec, i, true
+		}
+	}
+	return nil, -1, false
 }
 
 func (db *Database) isDuplicateContact(c *Contact) (*Contact, bool) {
@@ -99,6 +165,6 @@ func formatResponseBody(success bool, message string, data *Contact) string {
 	return fmt.Sprintf(
 		"{\"success\": %t,"+
 			"\"message\": \"%s\","+
-			" \"data\": %s\n}",
+			"\"data\": %s\n}",
 		success, message, string(body))
 }
