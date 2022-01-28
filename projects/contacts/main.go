@@ -29,6 +29,8 @@ func main() {
 	http.ListenAndServe("localhost:8080", db.handler())
 }
 
+// handler handles requests to the server
+// depending on the request URL
 func (db *Database) handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var id int
@@ -42,6 +44,7 @@ func (db *Database) handler() http.HandlerFunc {
 	}
 }
 
+// process handles the request to "/contacts"
 func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -55,10 +58,10 @@ func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Error: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		if con, ok := db.isDuplicateContact(&contact); ok {
+		if con, ok := db.isDuplicateContact(contact); ok {
 			w.WriteHeader(http.StatusConflict)
 			w.Header().Set("Content-Type", "application/json")
-			respBody := formatResponseBody(false, "Contact already exists.", con)
+			respBody := formatResponseBody(false, "Contact already exists.", *con)
 			fmt.Fprintln(w, respBody)
 			return
 		}
@@ -70,7 +73,7 @@ func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusCreated)
 		w.Header().Set("Content-Type", "application/json")
-		respBody := formatResponseBody(true, "Contact added successfully!", &contact)
+		respBody := formatResponseBody(true, "Contact added successfully!", contact)
 		fmt.Fprintln(w, respBody)
 	case "PUT":
 		http.Error(w, "Error: method not allowed", http.StatusMethodNotAllowed)
@@ -79,6 +82,7 @@ func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// processID handles the request to "/contacts/id"
 func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -104,7 +108,7 @@ func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
 			db.mu.Unlock()
 
 			w.Header().Set("Content-Type", "application/json")
-			respBody := formatResponseBody(true, "Contact updated successfully!", &contact)
+			respBody := formatResponseBody(true, "Contact updated successfully!", contact)
 			fmt.Fprintln(w, respBody)
 		} else {
 			http.Error(w, "Error: record not found", http.StatusNotFound)
@@ -123,6 +127,8 @@ func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// deleteContactById deletes a record from the
+// database given the record ID
 func (db *Database) deleteContactById(id int) {
 	db.mu.Lock()
 	for i, rec := range db.records {
@@ -133,6 +139,10 @@ func (db *Database) deleteContactById(id int) {
 	db.mu.Unlock()
 }
 
+// retrieveContactById retrieves a record from the
+// database given the record ID. It returns a pointer
+// to the found record, its index, and a boolean (true
+// if record was found; otherwise, false)
 func (db *Database) retrieveContactById(id int) (*Contact, int, bool) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -144,7 +154,10 @@ func (db *Database) retrieveContactById(id int) (*Contact, int, bool) {
 	return nil, -1, false
 }
 
-func (db *Database) isDuplicateContact(c *Contact) (*Contact, bool) {
+// isDuplicateContact checks for duplicate records given
+// a Contact. It returns the pointer to the found record
+// and a boolean (true if record already exists; otherwise, false)
+func (db *Database) isDuplicateContact(c Contact) (*Contact, bool) {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	for _, rec := range db.records {
@@ -160,7 +173,9 @@ func (db *Database) isDuplicateContact(c *Contact) (*Contact, bool) {
 	return nil, false
 }
 
-func formatResponseBody(success bool, message string, data *Contact) string {
+// formatResponseBody returns a formatted string given
+// a boolean, message, and Contact converted to JSON format
+func formatResponseBody(success bool, message string, data Contact) string {
 	body, _ := json.Marshal(data)
 	return fmt.Sprintf(
 		"{\"success\": %t,"+
