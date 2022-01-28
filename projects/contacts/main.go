@@ -73,9 +73,9 @@ func (db *Database) process(w http.ResponseWriter, r *http.Request) {
 		respBody := formatResponseBody(true, "Contact added successfully!", &contact)
 		fmt.Fprintln(w, respBody)
 	case "PUT":
-		http.Error(w, "Error: method not allowed", 405)
+		http.Error(w, "Error: method not allowed", http.StatusMethodNotAllowed)
 	case "DELETE":
-		http.Error(w, "Error: method not allowed", 405)
+		http.Error(w, "Error: method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
@@ -87,10 +87,10 @@ func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 		} else {
-			http.Error(w, "Error: record not found", 404)
+			http.Error(w, "Error: record not found", http.StatusNotFound)
 		}
 	case "POST":
-		http.Error(w, "Error: method not allowed", 405)
+		http.Error(w, "Error: method not allowed", http.StatusMethodNotAllowed)
 	case "PUT":
 		if con, index, ok := db.retrieveContactById(id); ok {
 			var contact Contact
@@ -107,7 +107,7 @@ func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
 			respBody := formatResponseBody(true, "Contact updated successfully!", &contact)
 			fmt.Fprintln(w, respBody)
 		} else {
-			http.Error(w, "Error: record not found", 404)
+			http.Error(w, "Error: record not found", http.StatusNotFound)
 		}
 	case "DELETE":
 		if _, _, ok := db.retrieveContactById(id); ok {
@@ -118,7 +118,7 @@ func (db *Database) processID(id int, w http.ResponseWriter, r *http.Request) {
 				true, "Contact deleted successfully.")
 			fmt.Fprintln(w, respBody)
 		} else {
-			http.Error(w, "Error: record not found", 404)
+			http.Error(w, "Error: record not found", http.StatusNotFound)
 		}
 	}
 }
