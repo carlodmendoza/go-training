@@ -1,0 +1,33 @@
+GET http://localhost:8080/contacts
+
+POST http://localhost:8080/contacts
+
+{"First": "Juan", "Last": "Dela Cruz", "Company": "Google", "Address": "Nevada", "Country": "US", "Position": "Software Engineer"}
+
+POST http://localhost:8080/contacts
+
+{"First": "Jose", "Last": "Rizal", "Company": "Apple", "Address": "California", "Country": "US", "Position": "Software Engineer"}
+
+POST http://localhost:8080/contacts
+
+{"First": "Andres", "Last": "Bonifacio", "Company": "Facebook", "Address": "Oregon", "Country": "US", "Position": "Software Engineer"}
+
+PUT http://localhost:8080/contacts
+
+DELETE http://localhost:8080/contacts
+
+GET http://localhost:8080/contacts/1
+
+POST http://localhost:8080/contacts/1
+
+PUT http://localhost:8080/contacts/1
+
+{"First": "Juan", "Last": "Dela Cruz", "Company": "Facebook", "Address": "Nevada", "Country": "US", "Position": "Senior Software Engineer"}
+
+DELETE http://localhost:8080/contacts/2
+
+GET http://localhost:8080/contacts/100
+
+PUT http://localhost:8080/contacts/100
+
+DELETE http://localhost:8080/contacts/100
