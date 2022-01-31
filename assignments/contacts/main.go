@@ -26,7 +26,7 @@ type Database struct {
 func main() {
 	fmt.Println("Server running in port 8080")
 	db := &Database{records: []Contact{}}
-	http.ListenAndServe("localhost:8080", db.handler())
+	http.ListenAndServe(":8080", db.handler())
 }
 
 // handler handles requests to the server
