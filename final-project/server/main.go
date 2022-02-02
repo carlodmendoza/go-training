@@ -12,9 +12,7 @@ type User struct {
 	UserID            int
 	Name              string
 	Credentials       UserCredentials
-	wallets           []Wallet
 	transactions      []Transaction
-	nextWalletID      int
 	nextTransactionID int
 }
 
@@ -23,16 +21,8 @@ type UserCredentials struct {
 	Password string
 }
 
-type Wallet struct {
-	WalletID       int
-	Name           string
-	Currency       string
-	InitialBalance float64
-}
-
 type Transaction struct {
-	TransactionID int
-	WalletID      int
+	TransactionID string
 	CategoryID    int
 	Amount        float64
 	Date          string
@@ -68,16 +58,6 @@ func (db *Database) handler() http.HandlerFunc {
 			db.signin(w, r)
 		} else if r.URL.Path == "/signup" {
 			db.signup(w, r)
-		} else if r.URL.Path == "/wallets" {
-			if db.currentUser.UserID == 0 {
-				w.WriteHeader(http.StatusUnauthorized)
-				sendMessageWithBody(w, false, "Please login first.")
-			} else {
-				// GET wallets or wallet
-				// POST wallet
-				// PUT wallet
-				// DELETE wallet
-			}
 		} else if r.URL.Path == "/transactions" {
 			if db.currentUser.UserID == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
