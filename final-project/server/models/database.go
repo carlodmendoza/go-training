@@ -9,41 +9,23 @@ import (
 )
 
 type Database struct {
-	mu          sync.Mutex
-	users       []User
-	nextUserID  int
-	currentUser User
+	Users       []User     `json:"users"`
+	NextUserID  int        `json:"nextUserID"`
+	Categories  []Category `json:"categories"`
+	Mu          sync.Mutex
+	CurrentUser User
+}
+
+type Category struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 func (db *Database) InitializeDatabase() {
-	db.users = []User{}
+	db.Users = []User{}
 }
 
-func (db *Database) Handler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/signin" {
-			db.signin(w, r)
-		} else if r.URL.Path == "/signup" {
-			db.signup(w, r)
-		} else if r.URL.Path == "/transactions" {
-			if db.currentUser.UserID == 0 {
-				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Please login first.")
-			} else {
-				// VIEW transactions or transaction
-				// POST transaction
-				// PUT transaction
-				// DELETE transaction
-				fmt.Println("Handle transactions")
-			}
-		} else {
-			w.WriteHeader(http.StatusNotImplemented)
-			utils.SendMessage(w, "Invalid URL or request")
-		}
-	}
-}
-
-func (db *Database) signin(w http.ResponseWriter, r *http.Request) {
+func (db *Database) Signin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		var creds Credentials
@@ -60,7 +42,7 @@ func (db *Database) signin(w http.ResponseWriter, r *http.Request) {
 		} else {
 			if user := db.authenticateUser(creds); user != nil {
 				utils.SendMessageWithBody(w, true, "Logged in successfully!")
-				db.currentUser = *user
+				db.CurrentUser = *user
 			} else {
 				w.WriteHeader(http.StatusUnauthorized)
 				utils.SendMessageWithBody(w, false, "Invalid username or password.")
@@ -72,7 +54,7 @@ func (db *Database) signin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (db *Database) signup(w http.ResponseWriter, r *http.Request) {
+func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		var user User
@@ -91,11 +73,11 @@ func (db *Database) signup(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusConflict)
 				utils.SendMessageWithBody(w, false, "Account already exists.")
 			} else {
-				db.mu.Lock()
-				db.nextUserID++
-				user.UserID = db.nextUserID
-				db.users = append(db.users, user)
-				db.mu.Unlock()
+				db.Mu.Lock()
+				db.NextUserID++
+				user.UserID = db.NextUserID
+				db.Users = append(db.Users, user)
+				db.Mu.Unlock()
 
 				w.WriteHeader(http.StatusCreated)
 				utils.SendMessageWithBody(w, true, "Signed up successfully!")
@@ -108,9 +90,9 @@ func (db *Database) signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (db *Database) authenticateUser(creds Credentials) *User {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	for _, user := range db.users {
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for _, user := range db.Users {
 		if creds.Username == user.Credentials.Username && creds.Password == user.Credentials.Password {
 			return &user
 		}
@@ -119,9 +101,9 @@ func (db *Database) authenticateUser(creds Credentials) *User {
 }
 
 func (db *Database) findUser(creds Credentials) *User {
-	db.mu.Lock()
-	defer db.mu.Unlock()
-	for _, user := range db.users {
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for _, user := range db.Users {
 		if creds.Username == user.Credentials.Username {
 			return &user
 		}
