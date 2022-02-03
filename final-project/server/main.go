@@ -8,38 +8,37 @@ import (
 	"sync"
 )
 
+type Database struct {
+	mu          sync.Mutex
+	users       []User
+	nextUserID  int
+	currentUser User
+}
+
 type User struct {
 	UserID            int
 	Name              string
-	Credentials       UserCredentials
+	Credentials       Credentials
 	transactions      []Transaction
 	nextTransactionID int
 }
 
-type UserCredentials struct {
+type Credentials struct {
 	Username string
 	Password string
 }
 
 type Transaction struct {
 	TransactionID string
-	CategoryID    int
+	Category      Category
 	Amount        float64
 	Date          string
 	Notes         string
 }
 
 type Category struct {
-	CategoryID int
-	Name       string
-	Type       string
-}
-
-type Database struct {
-	nextUserID  int
-	mu          sync.Mutex
-	users       []User
-	currentUser User
+	Name string
+	Type string
 }
 
 func main() {
@@ -78,7 +77,7 @@ func (db *Database) handler() http.HandlerFunc {
 func (db *Database) signin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
-		var creds UserCredentials
+		var creds Credentials
 		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
 			w.WriteHeader(http.StatusBadRequest)
@@ -92,6 +91,7 @@ func (db *Database) signin(w http.ResponseWriter, r *http.Request) {
 		} else {
 			if user := db.authenticateUser(creds); user != nil {
 				sendMessageWithBody(w, true, "Logged in successfully!")
+				db.currentUser = *user
 			} else {
 				w.WriteHeader(http.StatusUnauthorized)
 				sendMessageWithBody(w, false, "Invalid username or password.")
@@ -138,7 +138,7 @@ func (db *Database) signup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (db *Database) authenticateUser(creds UserCredentials) *User {
+func (db *Database) authenticateUser(creds Credentials) *User {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	for _, user := range db.users {
@@ -149,7 +149,7 @@ func (db *Database) authenticateUser(creds UserCredentials) *User {
 	return nil
 }
 
-func (db *Database) findUser(creds UserCredentials) *User {
+func (db *Database) findUser(creds Credentials) *User {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	for _, user := range db.users {
