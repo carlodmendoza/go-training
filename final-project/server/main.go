@@ -40,6 +40,7 @@ func startDatabase(filepath string) *models.Database {
 }
 
 func updateDatabase(db *models.Database) {
+	db.Mu.Lock()
 	byteData, err := json.MarshalIndent(db, "", "    ")
 	if err != nil {
 		fmt.Printf("Failed to marshal data: %s", err.Error())
@@ -47,10 +48,12 @@ func updateDatabase(db *models.Database) {
 	if err := ioutil.WriteFile("data/data.json", byteData, 0644); err != nil {
 		fmt.Printf("Failed to write data: %s", err.Error())
 	}
+	db.Mu.Unlock()
 }
 
 func handler(db *models.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var transID int
 		if r.URL.Path == "/signin" {
 			db.Signin(w, r)
 		} else if r.URL.Path == "/signup" {
@@ -60,11 +63,14 @@ func handler(db *models.Database) http.HandlerFunc {
 				w.WriteHeader(http.StatusUnauthorized)
 				utils.SendMessageWithBody(w, false, "Please sign in first.")
 			} else {
-				// VIEW transactions or transaction
-				// POST transaction
-				// PUT transaction
-				// DELETE transaction
-				fmt.Println("Handle transactions")
+				db.CurrentUser.ProcessTransaction(db, w, r)
+			}
+		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
+			if db.CurrentUser.UserID == 0 {
+				w.WriteHeader(http.StatusUnauthorized)
+				utils.SendMessageWithBody(w, false, "Please sign in first.")
+			} else {
+				db.CurrentUser.ProcessTransactionID(transID, db, w, r)
 			}
 		} else {
 			w.WriteHeader(http.StatusNotImplemented)
