@@ -21,10 +21,6 @@ type Category struct {
 	Type string `json:"type"`
 }
 
-func (db *Database) InitializeDatabase() {
-	db.Users = []User{}
-}
-
 func (db *Database) Signin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":

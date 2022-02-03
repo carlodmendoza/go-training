@@ -1,20 +1,39 @@
 package main
 
 import (
+	"encoding/json"
 	"final-project/server/models"
 	"final-project/server/utils"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
 	fmt.Println("Server running in port 8080")
-	db := &models.Database{}
-	db.InitializeDatabase()
+	db := startDatabase("data/data.json")
 	if err := http.ListenAndServe("localhost:8080", handler(db)); err != nil {
 		log.Fatalf("Error ListenAndServe(): %s", err.Error())
 	}
+}
+
+func startDatabase(filepath string) *models.Database {
+	file, err := os.Open(filepath)
+	if err != nil {
+		log.Fatalf("Failed to open json file: %s", err.Error())
+	}
+	defer file.Close()
+	byteData, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatalf("Failed to read json file: %s", err.Error())
+	}
+	var result *models.Database
+	if err := json.Unmarshal([]byte(byteData), &result); err != nil {
+		log.Fatalf("Failed to parse json file: %s", err.Error())
+	}
+	return result
 }
 
 func handler(db *models.Database) http.HandlerFunc {
@@ -26,7 +45,7 @@ func handler(db *models.Database) http.HandlerFunc {
 		} else if r.URL.Path == "/transactions" {
 			if db.CurrentUser.UserID == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Please login first.")
+				utils.SendMessageWithBody(w, false, "Please sign in first.")
 			} else {
 				// VIEW transactions or transaction
 				// POST transaction
