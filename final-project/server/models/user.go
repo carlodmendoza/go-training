@@ -14,9 +14,10 @@ type Credentials struct {
 }
 
 type Transaction struct {
-	TransactionID string   `json:"transactionID"`
-	Category      Category `json:"category"`
-	Amount        float64  `json:"amount"`
-	Date          string   `json:"date"`
-	Notes         string   `json:"notes"`
+	TransactionID string  `json:"transactionID"`
+	Type          string  `json:"type"`
+	Category      string  `json:"category"`
+	Amount        float64 `json:"amount"`
+	Date          string  `json:"date"`
+	Notes         string  `json:"notes"`
 }

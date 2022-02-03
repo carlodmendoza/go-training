@@ -1,4 +1,31 @@
 {
     "users": [],
-    "categories": []
+    "categories": {
+        "expense": [
+            "Food \u0026 Beverage",
+            "Gifts \u0026 Donations",
+            "Education",
+            "Fees \u0026 Charges",
+            "Bills \u0026 Utilities",
+            "Transportation",
+            "Shopping",
+            "Friends \u0026 Lover",
+            "Entertainment",
+            "Travel",
+            "Health \u0026 Fitness",
+            "Family",
+            "Investment",
+            "Business",
+            "Insurances",
+            "Other Expense"
+        ],
+        "income": [
+            "Salary",
+            "Award",
+            "Interest Money",
+            "Gifts",
+            "Selling",
+            "Other Income"
+        ]
+    }
 }

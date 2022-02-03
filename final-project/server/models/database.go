@@ -9,16 +9,11 @@ import (
 )
 
 type Database struct {
-	Users       []User     `json:"users"`
-	NextUserID  int        `json:"nextUserID"`
-	Categories  []Category `json:"categories"`
+	Users       []User              `json:"users"`
+	NextUserID  int                 `json:"nextUserID"`
+	Categories  map[string][]string `json:"categories"`
 	Mu          sync.Mutex
 	CurrentUser User
-}
-
-type Category struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
 }
 
 func (db *Database) Signin(w http.ResponseWriter, r *http.Request) {
