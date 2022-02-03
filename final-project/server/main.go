@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -33,7 +34,19 @@ func startDatabase(filepath string) *models.Database {
 	if err := json.Unmarshal([]byte(byteData), &result); err != nil {
 		log.Fatalf("Failed to parse json file: %s", err.Error())
 	}
+	result.CurrentUser = models.User{}
+	result.Mu = sync.Mutex{}
 	return result
+}
+
+func updateDatabase(db *models.Database) {
+	byteData, err := json.MarshalIndent(db, "", "    ")
+	if err != nil {
+		fmt.Printf("Failed to marshal data: %s", err.Error())
+	}
+	if err := ioutil.WriteFile("data/data.json", byteData, 0644); err != nil {
+		fmt.Printf("Failed to write data: %s", err.Error())
+	}
 }
 
 func handler(db *models.Database) http.HandlerFunc {
@@ -57,5 +70,6 @@ func handler(db *models.Database) http.HandlerFunc {
 			w.WriteHeader(http.StatusNotImplemented)
 			utils.SendMessage(w, "Invalid URL or request")
 		}
+		updateDatabase(db)
 	}
 }

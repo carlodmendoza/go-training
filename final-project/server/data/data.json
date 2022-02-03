@@ -1,14 +1,4 @@
 {
-    "users": [
-        {
-            "userID": 1,
-            "name": "Juan Dela Cruz",
-            "credentials": {
-                "username": "jdelacruz",
-                "password": "123"
-            }
-        }
-    ],
-    "nextUserID": 2,
+    "users": [],
     "categories": []
 }
