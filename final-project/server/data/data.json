@@ -2,30 +2,118 @@
     "users": [],
     "categories": {
         "expense": [
-            "Food \u0026 Beverage",
-            "Gifts \u0026 Donations",
-            "Education",
-            "Fees \u0026 Charges",
-            "Bills \u0026 Utilities",
-            "Transportation",
-            "Shopping",
-            "Friends \u0026 Lover",
-            "Entertainment",
-            "Travel",
-            "Health \u0026 Fitness",
-            "Family",
-            "Investment",
-            "Business",
-            "Insurances",
-            "Other Expense"
+            {
+                "categoryID": 1,
+                "name": "Food \u0026 Beverage",
+                "type": ""
+            },
+            {
+                "categoryID": 2,
+                "name": "Gifts \u0026 Donations",
+                "type": ""
+            },
+            {
+                "categoryID": 3,
+                "name": "Education",
+                "type": ""
+            },
+            {
+                "categoryID": 4,
+                "name": "Fees \u0026 Charges",
+                "type": ""
+            },
+            {
+                "categoryID": 5,
+                "name": "Bills \u0026 Utilities",
+                "type": ""
+            },
+            {
+                "categoryID": 6,
+                "name": "Transportation",
+                "type": ""
+            },
+            {
+                "categoryID": 7,
+                "name": "Shopping",
+                "type": ""
+            },
+            {
+                "categoryID": 8,
+                "name": "Friends \u0026 Lover",
+                "type": ""
+            },
+            {
+                "categoryID": 9,
+                "name": "Entertainment",
+                "type": ""
+            },
+            {
+                "categoryID": 10,
+                "name": "Travel",
+                "type": ""
+            },
+            {
+                "categoryID": 11,
+                "name": "Health \u0026 Fitness",
+                "type": ""
+            },
+            {
+                "categoryID": 12,
+                "name": "Family",
+                "type": ""
+            },
+            {
+                "categoryID": 13,
+                "name": "Investment",
+                "type": ""
+            },
+            {
+                "categoryID": 14,
+                "name": "Business",
+                "type": ""
+            },
+            {
+                "categoryID": 15,
+                "name": "Insurances",
+                "type": ""
+            },
+            {
+                "categoryID": 16,
+                "name": "Other Expense",
+                "type": ""
+            }
         ],
         "income": [
-            "Salary",
-            "Award",
-            "Interest Money",
-            "Gifts",
-            "Selling",
-            "Other Income"
+            {
+                "categoryID": 17,
+                "name": "Salary",
+                "type": ""
+            },
+            {
+                "categoryID": 18,
+                "name": "Award",
+                "type": ""
+            },
+            {
+                "categoryID": 19,
+                "name": "Interest Money",
+                "type": ""
+            },
+            {
+                "categoryID": 20,
+                "name": "Gifts",
+                "type": ""
+            },
+            {
+                "categoryID": 21,
+                "name": "Selling",
+                "type": ""
+            },
+            {
+                "categoryID": 22,
+                "name": "Other Income",
+                "type": ""
+            }
         ]
     }
 }

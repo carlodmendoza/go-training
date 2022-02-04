@@ -21,11 +21,16 @@ type Credentials struct {
 
 type Transaction struct {
 	TransactionID int     `json:"transactionID"`
-	Type          string  `json:"type"`
-	Category      string  `json:"category"`
+	CategoryID    int     `json:"categoryID"`
 	Amount        float64 `json:"amount"`
 	Date          string  `json:"date"`
 	Notes         string  `json:"notes"`
+}
+
+type Category struct {
+	CategoryID int    `json:"categoryID"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
 }
 
 func (user *User) ProcessTransaction(db *Database, w http.ResponseWriter, r *http.Request) {
@@ -48,19 +53,25 @@ func (user *User) ProcessTransaction(db *Database, w http.ResponseWriter, r *htt
 			utils.SendMessage(w, "400 Bad Request")
 			return
 		}
-		if transaction.Type == "" || transaction.Category == "" || transaction.Amount == 0 || transaction.Date == "" {
+		if transaction.CategoryID == 0 || transaction.Amount == 0 || transaction.Date == "" {
 			fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
 			w.WriteHeader(http.StatusBadRequest)
 			utils.SendMessage(w, "400 Bad Request")
 		} else {
-			db.Mu.Lock()
-			db.NextTransactionID++
-			transaction.TransactionID = db.NextTransactionID
-			user.Transactions = append(user.Transactions, transaction)
-			db.Mu.Unlock()
+			if tempCategory := db.findCategory(transaction.CategoryID); tempCategory == nil {
+				fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
+				w.WriteHeader(http.StatusBadRequest)
+				utils.SendMessageWithBody(w, false, "Category doesn't exist.")
+			} else {
+				db.Mu.Lock()
+				db.NextTransactionID++
+				transaction.TransactionID = db.NextTransactionID
+				user.Transactions = append(user.Transactions, transaction)
+				db.Mu.Unlock()
 
-			w.WriteHeader(http.StatusCreated)
-			utils.SendMessageWithBody(w, true, "Transaction added successfully!")
+				w.WriteHeader(http.StatusCreated)
+				utils.SendMessageWithBody(w, true, "Transaction added successfully!")
+			}
 		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -1,9 +1,0 @@
-POST http://localhost:8080/signup
-
-{"name": "Carlo", "credentials": {"username": "cmendoza", "password": "123"}}
-
-POST http://localhost:8080/signin
-
-{"username": "cmendoza", "password": "123"}
-
-POST http://localhost:8080/transactions

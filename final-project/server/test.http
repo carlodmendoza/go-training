@@ -1,0 +1,43 @@
+POST http://localhost:8080/signup
+
+{"name": "Carlo", "credentials": {"username": "cmendoza", "password": "123"}}
+
+###
+
+POST http://localhost:8080/signin
+
+{"username": "cmendoza", "password": "123"}
+
+###
+
+GET http://localhost:8080/transactions
+
+###
+
+POST http://localhost:8080/transactions
+
+{"categoryID": "", "amount": "", "date":"", "notes": ""}
+
+###
+
+PUT http://localhost:8080/transactions
+
+###
+
+DELETE http://localhost:8080/transactions
+
+###
+
+GET http://localhost:8080/transactions/1
+
+###
+
+POST http://localhost:8080/transactions/1
+
+###
+
+PUT http://localhost:8080/transactions/1
+
+###
+
+DELETE http://localhost:8080/transactions/1

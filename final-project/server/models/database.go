@@ -9,10 +9,10 @@ import (
 )
 
 type Database struct {
-	Users             []User              `json:"users"`
-	NextUserID        int                 `json:"nextUserID"`
-	NextTransactionID int                 `json:"nextTransactionID"`
-	Categories        map[string][]string `json:"categories"`
+	Users             []User                `json:"users"`
+	NextUserID        int                   `json:"nextUserID"`
+	NextTransactionID int                   `json:"nextTransactionID"`
+	Categories        map[string][]Category `json:"categories"`
 	Mu                sync.Mutex
 	CurrentUser       User
 }
@@ -68,6 +68,7 @@ func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
 				db.Mu.Lock()
 				db.NextUserID++
 				user.UserID = db.NextUserID
+				user.Transactions = []Transaction{}
 				db.Users = append(db.Users, user)
 				db.Mu.Unlock()
 
@@ -98,6 +99,18 @@ func (db *Database) findUser(creds Credentials) *User {
 	for _, user := range db.Users {
 		if creds.Username == user.Credentials.Username {
 			return &user
+		}
+	}
+	return nil
+}
+
+func (db *Database) findCategory(catID int) *Category {
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	categories := append(db.Categories["expense"], db.Categories["income"]...)
+	for _, cat := range categories {
+		if cat.CategoryID == catID {
+			return &cat
 		}
 	}
 	return nil
