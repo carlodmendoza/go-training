@@ -5,6 +5,7 @@ import (
 	"final-project/server/utils"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type User struct {
@@ -62,16 +63,23 @@ func (user *User) ProcessTransaction(db *Database, w http.ResponseWriter, r *htt
 				fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
 				w.WriteHeader(http.StatusBadRequest)
 				utils.SendMessageWithBody(w, false, "Category doesn't exist.")
-			} else {
-				db.Mu.Lock()
-				db.NextTransactionID++
-				transaction.TransactionID = db.NextTransactionID
-				user.Transactions = append(user.Transactions, transaction)
-				db.Mu.Unlock()
-
-				w.WriteHeader(http.StatusCreated)
-				utils.SendMessageWithBody(w, true, "Transaction added successfully!")
+				return
 			}
+			if _, err := time.Parse("01-02-2006", transaction.Date); err != nil {
+				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+				w.WriteHeader(http.StatusBadRequest)
+				utils.SendMessageWithBody(w, false, "Invalid date format.")
+				return
+			}
+
+			db.Mu.Lock()
+			db.NextTransactionID++
+			transaction.TransactionID = db.NextTransactionID
+			user.Transactions = append(user.Transactions, transaction)
+			db.Mu.Unlock()
+
+			w.WriteHeader(http.StatusCreated)
+			utils.SendMessageWithBody(w, true, "Transaction added successfully!")
 		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

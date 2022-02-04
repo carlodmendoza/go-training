@@ -16,7 +16,7 @@ GET http://localhost:8080/transactions
 
 POST http://localhost:8080/transactions
 
-{"categoryID": "", "amount": "", "date":"", "notes": ""}
+{"categoryID": 1, "amount": 100, "date":"02-04-2022", "notes": ""}
 
 ###
 
