@@ -34,7 +34,7 @@ func startDatabase(filepath string) *models.Database {
 	if err := json.Unmarshal([]byte(byteData), &result); err != nil {
 		log.Fatalf("Failed to parse json file: %s", err.Error())
 	}
-	result.CurrentUser = models.User{}
+	result.CurrentUserID = 0
 	result.Mu = sync.Mutex{}
 	return result
 }
@@ -59,18 +59,18 @@ func handler(db *models.Database) http.HandlerFunc {
 		} else if r.URL.Path == "/signup" {
 			db.Signup(w, r)
 		} else if r.URL.Path == "/transactions" {
-			if db.CurrentUser.UserID == 0 {
+			if db.CurrentUserID == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
 				utils.SendMessageWithBody(w, false, "Please sign in first.")
 			} else {
-				db.CurrentUser.ProcessTransaction(db, w, r)
+				db.ProcessTransaction(w, r, db.CurrentUserID)
 			}
 		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
-			if db.CurrentUser.UserID == 0 {
+			if db.CurrentUserID == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
 				utils.SendMessageWithBody(w, false, "Please sign in first.")
 			} else {
-				db.CurrentUser.ProcessTransactionID(transID, db, w, r)
+				db.ProcessTransactionID(w, r, transID, db.CurrentUserID)
 			}
 		} else {
 			w.WriteHeader(http.StatusNotImplemented)

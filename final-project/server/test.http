@@ -1,6 +1,6 @@
 POST http://localhost:8080/signup
 
-{"name": "Carlo", "credentials": {"username": "cmendoza", "password": "123"}}
+{"name": "Carlo Mendoza", "username": "cmendoza", "password": "123"}
 
 ###
 
