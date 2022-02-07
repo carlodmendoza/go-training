@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type Database struct {
@@ -65,7 +66,7 @@ func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			utils.SendMessage(w, "400 Bad Request")
 		} else {
-			if tempUser := db.findUserByUsername(reqBody["username"]); tempUser != nil {
+			if tempUser := db.findCredentialsByUsername(reqBody["username"]); tempUser != nil {
 				w.WriteHeader(http.StatusConflict)
 				utils.SendMessageWithBody(w, false, "Account already exists.")
 			} else {
@@ -93,51 +94,51 @@ func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
 
 func (db *Database) ProcessTransaction(w http.ResponseWriter, r *http.Request, userID int) {
 	switch r.Method {
-	// case "GET":
-	// 	w.Header().Set("Content-Type", "application/json")
-	// 	db.Mu.Lock()
-	// 	if err := json.NewEncoder(w).Encode(user.Transactions); err != nil {
-	// 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		utils.SendMessageWithBody(w, false, "500 Internal Server Error")
-	// 		return
-	// 	}
-	// 	db.Mu.Unlock()
-	// case "POST":
-	// 	var transaction Transaction
-	// 	if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
-	// 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-	// 		w.WriteHeader(http.StatusBadRequest)
-	// 		utils.SendMessage(w, "400 Bad Request")
-	// 		return
-	// 	}
-	// 	if transaction.CategoryID == 0 || transaction.Amount == 0 || transaction.Date == "" {
-	// 		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
-	// 		w.WriteHeader(http.StatusBadRequest)
-	// 		utils.SendMessage(w, "400 Bad Request")
-	// 	} else {
-	// 		if tempCategory := db.findCategory(transaction.CategoryID); tempCategory == nil {
-	// 			fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
-	// 			w.WriteHeader(http.StatusBadRequest)
-	// 			utils.SendMessageWithBody(w, false, "Category doesn't exist.")
-	// 			return
-	// 		}
-	// 		if _, err := time.Parse("01-02-2006", transaction.Date); err != nil {
-	// 			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-	// 			w.WriteHeader(http.StatusBadRequest)
-	// 			utils.SendMessageWithBody(w, false, "Invalid date format.")
-	// 			return
-	// 		}
+	case "GET":
+		transactions := db.findTransactionsByUid(userID)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(transactions); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			utils.SendMessageWithBody(w, false, "500 Internal Server Error")
+			return
+		}
+	case "POST":
+		var transaction Transaction
+		if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			utils.SendMessage(w, "400 Bad Request")
+			return
+		}
+		if transaction.Amount == 0 || transaction.Date == "" || transaction.CategoryID == 0 {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
+			w.WriteHeader(http.StatusBadRequest)
+			utils.SendMessage(w, "400 Bad Request")
+		} else {
+			if tempCategory := db.findCategoryByCid(transaction.CategoryID); tempCategory == nil {
+				fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
+				w.WriteHeader(http.StatusBadRequest)
+				utils.SendMessageWithBody(w, false, "Category doesn't exist.")
+				return
+			}
+			if _, err := time.Parse("01-02-2006", transaction.Date); err != nil {
+				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+				w.WriteHeader(http.StatusBadRequest)
+				utils.SendMessageWithBody(w, false, "Invalid date format.")
+				return
+			}
 
-	// 		db.Mu.Lock()
-	// 		db.NextTransactionID++
-	// 		transaction.TransactionID = db.NextTransactionID
-	// 		user.Transactions = append(user.Transactions, transaction)
-	// 		db.Mu.Unlock()
+			db.Mu.Lock()
+			db.NextTransactionID++
+			transaction.TransactionID = db.NextTransactionID
+			transaction.UserID = userID
+			db.Transactions = append(db.Transactions, transaction)
+			db.Mu.Unlock()
 
-	// 		w.WriteHeader(http.StatusCreated)
-	// 		utils.SendMessageWithBody(w, true, "Transaction added successfully!")
-	// 	}
+			w.WriteHeader(http.StatusCreated)
+			utils.SendMessageWithBody(w, true, "Transaction added successfully!")
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		utils.SendMessage(w, "405 Method not allowed")
@@ -166,7 +167,7 @@ func (db *Database) authenticateUser(creds Credentials) (int, bool) {
 	return 0, false
 }
 
-func (db *Database) findUserByUsername(username string) *Credentials {
+func (db *Database) findCredentialsByUsername(username string) *Credentials {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
 	for _, user := range db.Credentials {
@@ -177,17 +178,28 @@ func (db *Database) findUserByUsername(username string) *Credentials {
 	return nil
 }
 
-// func (db *Database) findCategory(catID int) *Category {
-// 	db.Mu.Lock()
-// 	defer db.Mu.Unlock()
-// 	categories := append(db.Categories["expense"], db.Categories["income"]...)
-// 	for _, cat := range categories {
-// 		if cat.CategoryID == catID {
-// 			return &cat
-// 		}
-// 	}
-// 	return nil
-// }
+func (db *Database) findTransactionsByUid(uid int) []Transaction {
+	transactions := []Transaction{}
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for _, trans := range db.Transactions {
+		if uid == trans.UserID {
+			transactions = append(transactions, trans)
+		}
+	}
+	return transactions
+}
+
+func (db *Database) findCategoryByCid(catID int) *Category {
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for _, cat := range db.Categories {
+		if catID == cat.CategoryID {
+			return &cat
+		}
+	}
+	return nil
+}
 
 // func (user *User) retrieveTransactionById(id int) (*Transaction, int, bool) {
 // 	for i, tran := range user.Transactions {

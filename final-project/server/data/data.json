@@ -6,112 +6,112 @@
         {
             "categoryID": 1,
             "name": "Food \u0026 Beverage",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 2,
             "name": "Gifts \u0026 Donations",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 3,
             "name": "Education",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 4,
             "name": "Fees \u0026 Charges",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 5,
             "name": "Bills \u0026 Utilities",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 6,
             "name": "Transportation",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 7,
             "name": "Shopping",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 8,
             "name": "Friends \u0026 Lover",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 9,
             "name": "Entertainment",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 10,
             "name": "Travel",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 11,
             "name": "Health \u0026 Fitness",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 12,
             "name": "Family",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 13,
             "name": "Investment",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 14,
             "name": "Business",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 15,
             "name": "Insurances",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 16,
             "name": "Other Expense",
-            "type": ""
+            "type": "Expense"
         },
         {
             "categoryID": 17,
             "name": "Salary",
-            "type": ""
+            "type": "Income"
         },
         {
             "categoryID": 18,
             "name": "Award",
-            "type": ""
+            "type": "Income"
         },
         {
             "categoryID": 19,
             "name": "Interest Money",
-            "type": ""
+            "type": "Income"
         },
         {
             "categoryID": 20,
             "name": "Gifts",
-            "type": ""
+            "type": "Income"
         },
         {
             "categoryID": 21,
             "name": "Selling",
-            "type": ""
+            "type": "Income"
         },
         {
             "categoryID": 22,
             "name": "Other Income",
-            "type": ""
+            "type": "Income"
         }
     ],
     "nextUserID": 0,
