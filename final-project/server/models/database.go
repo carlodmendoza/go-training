@@ -128,6 +128,15 @@ func (db *Database) ProcessTransaction(w http.ResponseWriter, r *http.Request, u
 				utils.SendMessageWithBody(w, true, "Transaction added successfully!")
 			}
 		}
+	case "DELETE":
+		transactions := db.findTransactionsByUid(userID)
+		if len(transactions) == 0 {
+			w.WriteHeader(http.StatusNotFound)
+			utils.SendMessageWithBody(w, false, "No transactions found.")
+		} else {
+			db.deleteAllTransactionsByUid(userID)
+			utils.SendMessageWithBody(w, true, "All transactions deleted successfully.")
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		utils.SendMessage(w, "405 Method not allowed")
@@ -247,6 +256,18 @@ func (db *Database) findTransactionByTid(uid, tid int) (*Transaction, int, bool)
 		}
 	}
 	return nil, -1, false
+}
+
+func (db *Database) deleteAllTransactionsByUid(uid int) {
+	transactions := []Transaction{}
+	db.Mu.Lock()
+	for _, trans := range db.Transactions {
+		if uid != trans.UserID {
+			transactions = append(transactions, trans)
+		}
+	}
+	db.Transactions = transactions
+	db.Mu.Unlock()
 }
 
 func (db *Database) findCategoryByCid(cid int) *Category {
