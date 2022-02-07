@@ -43,3 +43,7 @@ PUT http://localhost:8080/transactions/1
 ###
 
 DELETE http://localhost:8080/transactions/1
+
+###
+
+GET http://localhost:8080/categories

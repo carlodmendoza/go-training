@@ -187,6 +187,22 @@ func (db *Database) ProcessTransactionID(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+func (db *Database) ProcessCategories(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(db.Categories); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			utils.SendMessageWithBody(w, false, "500 Internal Server Error")
+			return
+		}
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		utils.SendMessage(w, "405 Method not allowed")
+	}
+}
+
 func (db *Database) authenticateUser(creds Credentials) (int, bool) {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()

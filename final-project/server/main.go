@@ -72,6 +72,13 @@ func handler(db *models.Database) http.HandlerFunc {
 			} else {
 				db.ProcessTransactionID(w, r, db.CurrentUserID, transID)
 			}
+		} else if r.URL.Path == "/categories" {
+			if db.CurrentUserID == 0 {
+				w.WriteHeader(http.StatusUnauthorized)
+				utils.SendMessageWithBody(w, false, "Please sign in first.")
+			} else {
+				db.ProcessCategories(w, r)
+			}
 		} else {
 			w.WriteHeader(http.StatusNotImplemented)
 			utils.SendMessage(w, "Invalid URL or request")
