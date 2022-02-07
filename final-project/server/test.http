@@ -16,7 +16,7 @@ GET http://localhost:8080/transactions
 
 POST http://localhost:8080/transactions
 
-{"amount": 100, "date":"02-04-2022", "categoryID": 1, "notes": ""}
+{"amount": 100, "date":"02-04-2022", "categoryID": 1}
 
 ###
 
@@ -37,6 +37,8 @@ POST http://localhost:8080/transactions/1
 ###
 
 PUT http://localhost:8080/transactions/1
+
+{"amount": 200, "notes": "Lunch out", "categoryID": 2}
 
 ###
 

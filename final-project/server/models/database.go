@@ -116,28 +116,17 @@ func (db *Database) ProcessTransaction(w http.ResponseWriter, r *http.Request, u
 			w.WriteHeader(http.StatusBadRequest)
 			utils.SendMessage(w, "400 Bad Request")
 		} else {
-			if tempCategory := db.findCategoryByCid(transaction.CategoryID); tempCategory == nil {
-				fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
-				w.WriteHeader(http.StatusBadRequest)
-				utils.SendMessageWithBody(w, false, "Category doesn't exist.")
-				return
-			}
-			if _, err := time.Parse("01-02-2006", transaction.Date); err != nil {
-				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-				w.WriteHeader(http.StatusBadRequest)
-				utils.SendMessageWithBody(w, false, "Invalid date format.")
-				return
-			}
+			if ok := db.validateNewTransaction(w, r, transaction); ok {
+				db.Mu.Lock()
+				db.NextTransactionID++
+				transaction.TransactionID = db.NextTransactionID
+				transaction.UserID = userID
+				db.Transactions = append(db.Transactions, transaction)
+				db.Mu.Unlock()
 
-			db.Mu.Lock()
-			db.NextTransactionID++
-			transaction.TransactionID = db.NextTransactionID
-			transaction.UserID = userID
-			db.Transactions = append(db.Transactions, transaction)
-			db.Mu.Unlock()
-
-			w.WriteHeader(http.StatusCreated)
-			utils.SendMessageWithBody(w, true, "Transaction added successfully!")
+				w.WriteHeader(http.StatusCreated)
+				utils.SendMessageWithBody(w, true, "Transaction added successfully!")
+			}
 		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -145,11 +134,53 @@ func (db *Database) ProcessTransaction(w http.ResponseWriter, r *http.Request, u
 	}
 }
 
-func (db *Database) ProcessTransactionID(w http.ResponseWriter, r *http.Request, id, transID int) {
+func (db *Database) ProcessTransactionID(w http.ResponseWriter, r *http.Request, userID, transID int) {
 	switch r.Method {
 	case "GET":
+		if trans, _, ok := db.findTransactionByTid(userID, transID); ok {
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(&trans); err != nil {
+				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+				w.WriteHeader(http.StatusInternalServerError)
+				utils.SendMessageWithBody(w, false, "500 Internal Server Error")
+			}
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			utils.SendMessageWithBody(w, false, "Transaction not found.")
+		}
 	case "PUT":
+		if trans, index, ok := db.findTransactionByTid(userID, transID); ok {
+			transaction := *trans
+			if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
+				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+				w.WriteHeader(http.StatusBadRequest)
+				utils.SendMessage(w, "400 Bad Request")
+				return
+			}
+			if ok := db.validateNewTransaction(w, r, transaction); ok {
+				db.Mu.Lock()
+				// ensures that original IDs are not changed
+				transaction.TransactionID = trans.TransactionID
+				transaction.UserID = trans.UserID
+				db.Transactions[index] = transaction
+				db.Mu.Unlock()
+
+				utils.SendMessageWithBody(w, true, "Transaction updated successfully!")
+			}
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			utils.SendMessageWithBody(w, false, "Transaction not found.")
+		}
 	case "DELETE":
+		if _, index, ok := db.findTransactionByTid(userID, transID); ok {
+			db.Mu.Lock()
+			db.Transactions = append(db.Transactions[:index], db.Transactions[index+1:]...)
+			db.Mu.Unlock()
+			utils.SendMessageWithBody(w, true, "Transaction deleted successfully.")
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			utils.SendMessageWithBody(w, false, "Transaction not found.")
+		}
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		utils.SendMessage(w, "405 Method not allowed")
@@ -190,22 +221,41 @@ func (db *Database) findTransactionsByUid(uid int) []Transaction {
 	return transactions
 }
 
-func (db *Database) findCategoryByCid(catID int) *Category {
+func (db *Database) findTransactionByTid(uid, tid int) (*Transaction, int, bool) {
+	transactions := db.findTransactionsByUid(uid)
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for i, trans := range transactions {
+		if tid == trans.TransactionID {
+			return &trans, i, true
+		}
+	}
+	return nil, -1, false
+}
+
+func (db *Database) findCategoryByCid(cid int) *Category {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
 	for _, cat := range db.Categories {
-		if catID == cat.CategoryID {
+		if cid == cat.CategoryID {
 			return &cat
 		}
 	}
 	return nil
 }
 
-// func (user *User) retrieveTransactionById(id int) (*Transaction, int, bool) {
-// 	for i, tran := range user.Transactions {
-// 		if tran.TransactionID == id {
-// 			return &tran, i, true
-// 		}
-// 	}
-// 	return nil, -1, false
-// }
+func (db *Database) validateNewTransaction(w http.ResponseWriter, r *http.Request, trans Transaction) bool {
+	if tempCategory := db.findCategoryByCid(trans.CategoryID); tempCategory == nil {
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
+		w.WriteHeader(http.StatusNotFound)
+		utils.SendMessageWithBody(w, false, "Category doesn't exist.")
+		return false
+	}
+	if _, err := time.Parse("01-02-2006", trans.Date); err != nil {
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		utils.SendMessageWithBody(w, false, "Invalid date format.")
+		return false
+	}
+	return true
+}

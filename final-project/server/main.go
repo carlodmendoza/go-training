@@ -70,7 +70,7 @@ func handler(db *models.Database) http.HandlerFunc {
 				w.WriteHeader(http.StatusUnauthorized)
 				utils.SendMessageWithBody(w, false, "Please sign in first.")
 			} else {
-				db.ProcessTransactionID(w, r, transID, db.CurrentUserID)
+				db.ProcessTransactionID(w, r, db.CurrentUserID, transID)
 			}
 		} else {
 			w.WriteHeader(http.StatusNotImplemented)
