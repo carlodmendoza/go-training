@@ -17,12 +17,14 @@ type Response struct {
 
 const baseURL = "http://localhost:8080/"
 
+var token string
+
 func main() {
 	printWelcomeMessage()
 	var choice int
 	c := http.Client{Timeout: time.Duration(1) * time.Second}
 
-	commands := []string{"Log in", "Sign up"}
+	commands := []string{"Sign in", "Sign up"}
 	printValidCommands(commands)
 	fmt.Scan(&choice)
 	for {
@@ -34,8 +36,9 @@ func main() {
 				fmt.Scan(&choice)
 			}
 		} else if choice == 2 {
-			fmt.Println("sign up")
-			break
+			signup(c)
+			printValidCommands(commands)
+			fmt.Scan(&choice)
 		} else {
 			printValidCommands(commands)
 			fmt.Scan(&choice)
@@ -47,11 +50,10 @@ func printWelcomeMessage() {
 	fmt.Println("========================================")
 	fmt.Println("Welcome to your Personal Budget Tracker!")
 	fmt.Println("========================================")
-	fmt.Println()
 }
 
 func printValidCommands(commands []string) {
-	fmt.Println("What do you want to do? (Enter the number of your choice):")
+	fmt.Println("\nWhat do you want to do? (Enter the number of your choice):")
 	counter := 1
 	for _, cmd := range commands {
 		fmt.Printf("%d. %s\n", counter, cmd)
@@ -69,6 +71,21 @@ func signin(c http.Client) bool {
 	fmt.Scan(&password)
 
 	reqBody := fmt.Sprintf("{\"username\":\"%s\", \"password\":\"%s\"}", username, password)
+	return getResponse(c, url, "POST", reqBody)
+}
+
+func signup(c http.Client) bool {
+	url := baseURL + "signup"
+
+	var name, username, password string
+	fmt.Println("Enter your name: ")
+	fmt.Scan(&name)
+	fmt.Println("Enter your username: ")
+	fmt.Scan(&username)
+	fmt.Println("Enter your password: ")
+	fmt.Scan(&password)
+
+	reqBody := fmt.Sprintf("{\"name\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", name, username, password)
 	return getResponse(c, url, "POST", reqBody)
 }
 
@@ -94,6 +111,9 @@ func getResponse(c http.Client, url, method, reqBody string) bool {
 		return false
 	} else {
 		if response.Success {
+			if url == baseURL+"signin" {
+				token = resp.Cookies()[0].Value
+			}
 			fmt.Println(response.Message)
 		} else {
 			fmt.Printf("Error: %s\n", response.Message)
