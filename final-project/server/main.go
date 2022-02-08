@@ -34,7 +34,6 @@ func startDatabase(filepath string) *models.Database {
 	if err := json.Unmarshal([]byte(byteData), &result); err != nil {
 		log.Fatalf("Failed to parse json file: %s", err.Error())
 	}
-	result.CurrentUserID = 0
 	result.Mu = sync.Mutex{}
 	return result
 }
@@ -59,23 +58,26 @@ func handler(db *models.Database) http.HandlerFunc {
 		} else if r.URL.Path == "/signup" {
 			db.Signup(w, r)
 		} else if r.URL.Path == "/transactions" {
-			if db.CurrentUserID == 0 {
+			uid := db.FindUidByToken(r)
+			if uid == -1 || uid == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Please sign in first.")
+				utils.SendMessageWithBody(w, false, "Unauthorized login.")
 			} else {
-				db.ProcessTransaction(w, r, db.CurrentUserID)
+				db.ProcessTransaction(w, r, uid)
 			}
 		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
-			if db.CurrentUserID == 0 {
+			uid := db.FindUidByToken(r)
+			if uid == -1 || uid == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Please sign in first.")
+				utils.SendMessageWithBody(w, false, "Unauthorized login.")
 			} else {
-				db.ProcessTransactionID(w, r, db.CurrentUserID, transID)
+				db.ProcessTransactionID(w, r, uid, transID)
 			}
 		} else if r.URL.Path == "/categories" {
-			if db.CurrentUserID == 0 {
+			uid := db.FindUidByToken(r)
+			if uid == -1 || uid == 0 {
 				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Please sign in first.")
+				utils.SendMessageWithBody(w, false, "Unauthorized login.")
 			} else {
 				db.ProcessCategories(w, r)
 			}

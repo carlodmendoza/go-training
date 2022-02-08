@@ -1,5 +1,6 @@
 {
     "users": [],
+    "sessions": [],
     "credentials": [],
     "transactions": [],
     "categories": [
@@ -116,6 +117,5 @@
     ],
     "nextUserID": 0,
     "nextTransactionID": 0,
-    "CurrentUserID": 0,
     "Mu": {}
 }

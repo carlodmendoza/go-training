@@ -11,12 +11,12 @@ import (
 
 type Database struct {
 	Users             []User        `json:"users"`
+	Sessions          []Session     `json:"sessions"`
 	Credentials       []Credentials `json:"credentials"`
 	Transactions      []Transaction `json:"transactions"`
 	Categories        []Category    `json:"categories"`
 	NextUserID        int           `json:"nextUserID"`
 	NextTransactionID int           `json:"nextTransactionID"`
-	CurrentUserID     int
 	Mu                sync.Mutex
 }
 
@@ -36,8 +36,24 @@ func (db *Database) Signin(w http.ResponseWriter, r *http.Request) {
 			utils.SendMessage(w, "400 Bad Request")
 		} else {
 			if userID, ok := db.authenticateUser(creds); ok {
+				var session Session
+				session.Token = utils.GenerateSessionToken()
+				session.Timestamp = time.Now().Format("2006-01-02 15:04:05")
+				session.UserID = userID
+				// if existing session, replace it with a new token and timestamp
+				if _, index, ok := db.findSessionByUid(userID); ok {
+					db.Mu.Lock()
+					db.Sessions[index] = session
+					db.Mu.Unlock()
+				} else {
+					db.Mu.Lock()
+					db.Sessions = append(db.Sessions, session)
+					db.Mu.Unlock()
+				}
+				// send token as Cookie to client
+				cookie := http.Cookie{Name: "Token", Value: session.Token}
+				http.SetCookie(w, &cookie)
 				utils.SendMessageWithBody(w, true, "Logged in successfully!")
-				db.CurrentUserID = userID
 			} else {
 				w.WriteHeader(http.StatusUnauthorized)
 				utils.SendMessageWithBody(w, false, "Invalid username or password.")
@@ -212,6 +228,22 @@ func (db *Database) ProcessCategories(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (db *Database) FindUidByToken(r *http.Request) int {
+	tokenCookie, err := r.Cookie("Token")
+	if err != nil {
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+		return -1
+	}
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for _, sesh := range db.Sessions {
+		if tokenCookie.Value == sesh.Token {
+			return sesh.UserID
+		}
+	}
+	return 0
+}
+
 func (db *Database) authenticateUser(creds Credentials) (int, bool) {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
@@ -221,6 +253,17 @@ func (db *Database) authenticateUser(creds Credentials) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+func (db *Database) findSessionByUid(uid int) (*Session, int, bool) {
+	db.Mu.Lock()
+	defer db.Mu.Unlock()
+	for i, sesh := range db.Sessions {
+		if uid == sesh.UserID {
+			return &sesh, i, true
+		}
+	}
+	return nil, -1, false
 }
 
 func (db *Database) findCredentialsByUsername(username string) *Credentials {

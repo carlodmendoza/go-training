@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 )
@@ -18,4 +20,12 @@ func SendMessageWithBody(w http.ResponseWriter, success bool, message string) {
 			"\"message\": \"%s\"}",
 		success, message)
 	fmt.Fprintln(w, responseBody)
+}
+
+func GenerateSessionToken() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }

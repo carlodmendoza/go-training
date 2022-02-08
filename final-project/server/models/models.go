@@ -25,3 +25,9 @@ type Category struct {
 	Name       string `json:"name"`
 	Type       string `json:"type"`
 }
+
+type Session struct {
+	Token     string `json:"token"`
+	Timestamp string `json:"timestamp"`
+	UserID    int    `json:"userID"`
+}
