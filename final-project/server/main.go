@@ -42,10 +42,10 @@ func updateDatabase(db *models.Database) {
 	db.Mu.Lock()
 	byteData, err := json.MarshalIndent(db, "", "    ")
 	if err != nil {
-		fmt.Printf("Failed to marshal data: %s", err.Error())
+		fmt.Printf("Failed to marshal data: %s\n", err.Error())
 	}
 	if err := ioutil.WriteFile("data/data.json", byteData, 0644); err != nil {
-		fmt.Printf("Failed to write data: %s", err.Error())
+		fmt.Printf("Failed to write data: %s\n", err.Error())
 	}
 	db.Mu.Unlock()
 }
