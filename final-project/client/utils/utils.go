@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strconv"
 )
 
 func PrintWelcomeMessage() {
@@ -17,4 +18,11 @@ func PrintValidCommands(commands []string) {
 		fmt.Printf("%d. %s\n", counter, cmd)
 		counter++
 	}
+}
+
+func FormatFloat(num float64) string {
+	if num == float64(int(num)) {
+		return strconv.Itoa(int(num))
+	}
+	return strconv.FormatFloat(num, 'f', 2, 64)
 }

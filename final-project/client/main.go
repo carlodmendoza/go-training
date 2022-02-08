@@ -9,12 +9,15 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"text/tabwriter"
 	"time"
 )
 
 const baseURL = "http://localhost:8080/"
 
 var cookie *http.Cookie
+var categories []models.Category
 
 func main() {
 	var choice int
@@ -43,11 +46,12 @@ func main() {
 	}
 
 	commands = []string{"View my transactions", "View report", "Add new transaction", "View a transaction", "Edit a transaction", "Delete a transaction", "Delete all transactions"}
+	categories = getCategories(c)
 	utils.PrintValidCommands(commands)
 	fmt.Scan(&choice)
 	for {
 		if choice == 1 {
-			viewAllTransactions(c)
+			viewTransactions(c)
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 2 {
@@ -103,13 +107,21 @@ func signup(c http.Client) bool {
 	return getResponse(c, url, "POST", reqBody)
 }
 
-func viewAllTransactions(c http.Client) {
+func viewTransactions(c http.Client) {
 	url := baseURL + "transactions"
-	if trans, ok := getTransactionFromResponse(c, url); ok {
+	if trans, ok := getTransactions(c, url); ok {
 		if len(trans) > 0 {
-			fmt.Println(trans)
+			w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+			fmt.Fprintln(w, "ID\tAmount\tDate\tNotes\tCategory")
+			for _, t := range trans {
+				if t.Notes == "" {
+					t.Notes = "\"\""
+				}
+				fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", t.TransactionID, utils.FormatFloat(t.Amount), t.Date, t.Notes, getCategoryDetails(t.CategoryID))
+			}
+			w.Flush()
 		} else {
-			fmt.Println("No transactions found.")
+			fmt.Println("No transaction/s found.")
 		}
 	}
 }
@@ -147,8 +159,7 @@ func getResponse(c http.Client, url, method, reqBody string) bool {
 
 }
 
-func getTransactionFromResponse(c http.Client, url string) ([]models.Transaction, bool) {
-	var response models.Response
+func getTransactions(c http.Client, url string) ([]models.Transaction, bool) {
 	var transactions []models.Transaction
 	var resp *http.Response
 	var err error
@@ -162,17 +173,40 @@ func getTransactionFromResponse(c http.Client, url string) ([]models.Transaction
 	defer resp.Body.Close()
 
 	data, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode == http.StatusUnauthorized {
-		if err := json.Unmarshal(data, &response); err != nil {
-			fmt.Printf("Failed to parse json response: %s\n", err.Error())
-			return []models.Transaction{}, false
-		}
-		fmt.Printf("Error: %s\n", response.Message)
-		return []models.Transaction{}, false
-	}
 	if err := json.Unmarshal(data, &transactions); err != nil {
 		fmt.Printf("Failed to parse json response: %s\n", err.Error())
 		return []models.Transaction{}, false
 	}
 	return transactions, true
+}
+
+func getCategories(c http.Client) []models.Category {
+	url := baseURL + "categories"
+	var categories []models.Category
+	var resp *http.Response
+	var err error
+
+	req, _ := http.NewRequest("GET", url, nil)
+	req.AddCookie(cookie)
+	resp, err = c.Do(req)
+	if err != nil {
+		log.Fatalf("Failed to get response: %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	data, _ := ioutil.ReadAll(resp.Body)
+	if err := json.Unmarshal(data, &categories); err != nil {
+		fmt.Printf("Failed to parse json response: %s\n", err.Error())
+		return []models.Category{}
+	}
+	return categories
+}
+
+func getCategoryDetails(catID int) string {
+	for _, cat := range categories {
+		if catID == cat.CategoryID {
+			return fmt.Sprintf("%s (%s)", cat.Name, cat.Type)
+		}
+	}
+	return fmt.Sprint(catID)
 }
