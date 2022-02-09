@@ -78,9 +78,21 @@ func main() {
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 6 {
+			var id int
+			fmt.Println("Enter the transaction ID: ")
+			fmt.Scan(&id)
+			deleteTransactions(c, id)
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 7 {
+			var choice int
+			fmt.Println("Warning: This will delete ALL of your transactions. Continue?")
+			confirm := []string{"No", "Yes"}
+			utils.PrintValidCommands(confirm)
+			fmt.Scan(&choice)
+			if choice == 2 {
+				deleteTransactions(c, 0)
+			}
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else {
@@ -120,10 +132,9 @@ func signup(c http.Client) bool {
 
 func viewTransactions(c http.Client, model interface{}, transID int) {
 	var url string
-	switch model.(type) {
-	case []models.Transaction:
+	if transID == 0 {
 		url = baseURL + "transactions"
-	case models.Transaction:
+	} else {
 		url = baseURL + "transactions/" + fmt.Sprint(transID)
 	}
 	if trans, ok := getTransactions(c, url, model); ok {
@@ -203,6 +214,16 @@ func addEditTransaction(c http.Client, transID int) bool {
 		url = baseURL + "transactions/" + fmt.Sprint(transID)
 		return getResponse(c, url, "PUT", reqBody, true)
 	}
+}
+
+func deleteTransactions(c http.Client, transID int) bool {
+	var url, reqBody string
+	if transID == 0 {
+		url = baseURL + "transactions"
+	} else {
+		url = baseURL + "transactions/" + fmt.Sprint(transID)
+	}
+	return getResponse(c, url, "DELETE", reqBody, true)
 }
 
 func getResponse(c http.Client, url, method, reqBody string, requireCookie bool) bool {
