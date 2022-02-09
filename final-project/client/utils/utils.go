@@ -11,7 +11,13 @@ func PrintWelcomeMessage() {
 	fmt.Println("========================================")
 }
 
-func PrintValidCommands(commands []string) {
+func PrintExitMessage() {
+	fmt.Println("===========================================")
+	fmt.Println("Thank you for using the app. See you again!")
+	fmt.Println("===========================================")
+}
+
+func PrintCommands(commands []string) {
 	fmt.Println("\nWhat do you want to do? (Enter the number of your choice):")
 	counter := 1
 	for _, cmd := range commands {
