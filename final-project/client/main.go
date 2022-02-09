@@ -50,7 +50,7 @@ func main() {
 		if choice == 1 {
 			viewTransactions(c, 0)
 		} else if choice == 2 {
-			// to implement
+			generateReport(c)
 		} else if choice == 3 {
 			addEditTransaction(c, 0)
 		} else if choice == 4 {
@@ -303,4 +303,57 @@ func printCategoryDetails() {
 	}
 	fmt.Print(expense)
 	fmt.Print(income)
+}
+
+func findCategoryDetailByCid(catID int, detail string) string {
+	for _, cat := range categories {
+		if catID == cat.CategoryID {
+			if detail == "Type" {
+				return cat.Type
+			} else if detail == "Name" {
+				return cat.Name
+			}
+		}
+	}
+	return ""
+}
+
+func generateReport(c http.Client) {
+	url := baseURL + "transactions"
+	if trans, ok := getTransactions(c, url, 0); ok {
+		if len(trans) > 0 {
+			var totalIncome, totalExpense float64
+			amountPerIncome := make(map[string]float64)
+			amountPerExpense := make(map[string]float64)
+			for _, tran := range trans {
+				catType := findCategoryDetailByCid(tran.CategoryID, "Type")
+				catName := findCategoryDetailByCid(tran.CategoryID, "Name")
+				if catType == "Income" {
+					totalIncome += tran.Amount
+					amountPerIncome[catName] += tran.Amount
+				} else {
+					totalExpense += tran.Amount
+					amountPerExpense[catName] += tran.Amount
+				}
+			}
+
+			fmt.Println("========================")
+			fmt.Println("     SUMMARY REPORT     ")
+			fmt.Println("========================")
+			fmt.Printf("Total Inflow: %s\n", utils.FormatFloat(totalIncome))
+			fmt.Printf("Total Outflow: %s\n", utils.FormatFloat(totalExpense))
+			fmt.Printf("Net Income: %s\n\n", utils.FormatFloat(totalIncome-totalExpense))
+			fmt.Println("Income Transactions:")
+			for k, v := range amountPerIncome {
+				fmt.Printf("%s (%s%%) - %s\n", utils.FormatFloat(v), utils.FormatFloat((v/totalIncome)*100), k)
+			}
+			fmt.Println()
+			fmt.Println("Expense Transactions:")
+			for k, v := range amountPerExpense {
+				fmt.Printf("%s (%s%%) - %s\n", utils.FormatFloat(v), utils.FormatFloat((v/totalExpense)*100), k)
+			}
+		} else {
+			fmt.Println("No transaction/s found.")
+		}
+	}
 }

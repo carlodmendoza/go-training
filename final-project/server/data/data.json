@@ -1,8 +1,106 @@
 {
-    "users": [],
-    "sessions": [],
-    "credentials": [],
-    "transactions": [],
+    "users": [
+        {
+            "userID": 1,
+            "name": "Carlo Mendoza"
+        }
+    ],
+    "sessions": [
+        {
+            "token": "a586d9705e34e5424a920dd2dbd6e12d",
+            "timestamp": "2022-02-09 21:17:04",
+            "userID": 1
+        }
+    ],
+    "credentials": [
+        {
+            "username": "cmendoza",
+            "password": "123",
+            "userID": 1
+        }
+    ],
+    "transactions": [
+        {
+            "transactionID": 1,
+            "amount": 100,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 1
+        },
+        {
+            "transactionID": 2,
+            "amount": 200,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 2
+        },
+        {
+            "transactionID": 3,
+            "amount": 300,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 3
+        },
+        {
+            "transactionID": 4,
+            "amount": 400,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 4
+        },
+        {
+            "transactionID": 5,
+            "amount": 500,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 5
+        },
+        {
+            "transactionID": 6,
+            "amount": 200,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 17
+        },
+        {
+            "transactionID": 7,
+            "amount": 400,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 18
+        },
+        {
+            "transactionID": 8,
+            "amount": 500,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 19
+        },
+        {
+            "transactionID": 9,
+            "amount": 800,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 20
+        },
+        {
+            "transactionID": 10,
+            "amount": 1000,
+            "date": "02-10-2022",
+            "notes": "",
+            "userID": 1,
+            "categoryID": 21
+        }
+    ],
     "categories": [
         {
             "categoryID": 1,
@@ -115,7 +213,7 @@
             "type": "Income"
         }
     ],
-    "nextUserID": 0,
-    "nextTransactionID": 0,
+    "nextUserID": 1,
+    "nextTransactionID": 10,
     "Mu": {}
 }
