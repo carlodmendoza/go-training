@@ -59,6 +59,7 @@ func main() {
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 3 {
+			addEditTransaction(c, "POST")
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 4 {
@@ -95,7 +96,7 @@ func signin(c http.Client) bool {
 	fmt.Scan(&password)
 
 	reqBody := fmt.Sprintf("{\"username\":\"%s\", \"password\":\"%s\"}", username, password)
-	return getResponse(c, url, "POST", reqBody)
+	return getResponse(c, url, "POST", reqBody, false)
 }
 
 func signup(c http.Client) bool {
@@ -110,7 +111,7 @@ func signup(c http.Client) bool {
 	fmt.Scan(&password)
 
 	reqBody := fmt.Sprintf("{\"name\":\"%s\", \"username\":\"%s\", \"password\":\"%s\"}", name, username, password)
-	return getResponse(c, url, "POST", reqBody)
+	return getResponse(c, url, "POST", reqBody, false)
 }
 
 func viewTransactions(c http.Client, model interface{}, transID int) {
@@ -170,16 +171,45 @@ func getTransactions(c http.Client, url string, model interface{}) ([]models.Tra
 	}
 }
 
-func getResponse(c http.Client, url, method, reqBody string) bool {
-	var response models.Response
-	var resp *http.Response
-	var err error
+func addEditTransaction(c http.Client, method string) bool {
+	url := baseURL + "transactions"
+	var amount float64
+	var date, notes string
+	var categoryID int
 
-	switch method {
-	case "POST":
-		outData := bytes.NewBuffer([]byte(reqBody))
-		resp, err = c.Post(url, "application/json", outData)
+	printCategoryDetails()
+	fmt.Println("Enter the category (Enter the ID of your choice): ")
+	fmt.Scan(&categoryID)
+	for amount == 0 {
+		fmt.Println("Enter the amount of transaction: ")
+		fmt.Scan(&amount)
 	}
+	fmt.Println("Enter the date (MM-DD-YYYY) of transaction: ")
+	fmt.Scan(&date)
+	fmt.Println("Enter any notes about the transaction (Type NA if none): ")
+	fmt.Scan(&notes)
+	if notes == "NA" {
+		notes = ""
+	}
+
+	reqBody := fmt.Sprintf("{\"amount\":%f, \"date\":\"%s\", \"notes\":\"%s\", \"categoryID\":%d}", amount, date, notes, categoryID)
+	return getResponse(c, url, method, reqBody, true)
+}
+
+func getResponse(c http.Client, url, method, reqBody string, requireCookie bool) bool {
+	var response models.Response
+	var req *http.Request
+	if method == "POST" || method == "PUT" {
+		outData := bytes.NewBuffer([]byte(reqBody))
+		req, _ = http.NewRequest(method, url, outData)
+		req.Header.Set("Content-Type", "application/json")
+	} else {
+		req, _ = http.NewRequest(method, url, nil)
+	}
+	if requireCookie {
+		req.AddCookie(cookie)
+	}
+	resp, err := c.Do(req)
 
 	if err != nil {
 		log.Fatalf("Failed to get response: %s", err.Error())
@@ -206,12 +236,10 @@ func getResponse(c http.Client, url, method, reqBody string) bool {
 func getCategories(c http.Client) []models.Category {
 	url := baseURL + "categories"
 	var categories []models.Category
-	var resp *http.Response
-	var err error
 
 	req, _ := http.NewRequest("GET", url, nil)
 	req.AddCookie(cookie)
-	resp, err = c.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		log.Fatalf("Failed to get response: %s", err.Error())
 	}
@@ -232,4 +260,18 @@ func getCategoryDetails(catID int) string {
 		}
 	}
 	return fmt.Sprint(catID)
+}
+
+func printCategoryDetails() {
+	expense := "Expense: \n"
+	income := "Income: \n"
+	for _, cat := range categories {
+		if cat.Type == "Expense" {
+			expense += fmt.Sprintf("%d. %s\n", cat.CategoryID, cat.Name)
+		} else {
+			income += fmt.Sprintf("%d. %s\n", cat.CategoryID, cat.Name)
+		}
+	}
+	fmt.Print(expense)
+	fmt.Print(income)
 }
