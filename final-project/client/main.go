@@ -59,7 +59,7 @@ func main() {
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 3 {
-			addEditTransaction(c, "POST")
+			addEditTransaction(c, 0)
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 4 {
@@ -71,6 +71,10 @@ func main() {
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 5 {
+			var id int
+			fmt.Println("Enter the transaction ID: ")
+			fmt.Scan(&id)
+			addEditTransaction(c, id)
 			utils.PrintValidCommands(commands)
 			fmt.Scan(&choice)
 		} else if choice == 6 {
@@ -171,10 +175,9 @@ func getTransactions(c http.Client, url string, model interface{}) ([]models.Tra
 	}
 }
 
-func addEditTransaction(c http.Client, method string) bool {
-	url := baseURL + "transactions"
+func addEditTransaction(c http.Client, transID int) bool {
 	var amount float64
-	var date, notes string
+	var url, date, notes string
 	var categoryID int
 
 	printCategoryDetails()
@@ -193,7 +196,13 @@ func addEditTransaction(c http.Client, method string) bool {
 	}
 
 	reqBody := fmt.Sprintf("{\"amount\":%f, \"date\":\"%s\", \"notes\":\"%s\", \"categoryID\":%d}", amount, date, notes, categoryID)
-	return getResponse(c, url, method, reqBody, true)
+	if transID == 0 {
+		url = baseURL + "transactions"
+		return getResponse(c, url, "POST", reqBody, true)
+	} else {
+		url = baseURL + "transactions/" + fmt.Sprint(transID)
+		return getResponse(c, url, "PUT", reqBody, true)
+	}
 }
 
 func getResponse(c http.Client, url, method, reqBody string, requireCookie bool) bool {
