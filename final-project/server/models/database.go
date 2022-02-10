@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+/*
+	Database program contains all fields and methods
+	of Database that make it possible to process
+	requests from a client.
+	Author: Carlo Mendoza
+*/
+
 type Database struct {
 	Users             []User        `json:"users"`
 	Sessions          []Session     `json:"sessions"`
@@ -20,6 +27,10 @@ type Database struct {
 	Mu                sync.Mutex
 }
 
+// Signin handles a sign in request by a client.
+// Upon successful sign in, a generated token
+// is given as a cookie to client for authorizing
+// future requests.
 func (db *Database) Signin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
@@ -65,6 +76,8 @@ func (db *Database) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Signup handles a sign up request by a client.
+// It checks if an account already exists.
 func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
@@ -108,6 +121,9 @@ func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ProcessTransaction handles a transaction/ request by a client
+// given a user ID. The client can either get all transactions,
+// add new transaction, or delete all transactions.
 func (db *Database) ProcessTransaction(w http.ResponseWriter, r *http.Request, userID int) {
 	switch r.Method {
 	case "GET":
@@ -159,6 +175,9 @@ func (db *Database) ProcessTransaction(w http.ResponseWriter, r *http.Request, u
 	}
 }
 
+// ProcessTransactionID handles a transaction/id request by a client
+// given a user ID and a transaction ID. The client can either get,
+// update, or delete a transaction.
 func (db *Database) ProcessTransactionID(w http.ResponseWriter, r *http.Request, userID, transID int) {
 	switch r.Method {
 	case "GET":
@@ -212,6 +231,8 @@ func (db *Database) ProcessTransactionID(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// ProcessCategories handles a categories/ request by a client.
+// The client can get all categories.
 func (db *Database) ProcessCategories(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -228,6 +249,8 @@ func (db *Database) ProcessCategories(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FindUidByToken returns the user ID given a token
+// sent from a request cookie.
 func (db *Database) FindUidByToken(r *http.Request) int {
 	tokenCookie, err := r.Cookie("Token")
 	if err != nil {
@@ -244,6 +267,8 @@ func (db *Database) FindUidByToken(r *http.Request) int {
 	return 0
 }
 
+// authenticateUser returns the user ID given a username.
+// If username doesn't exist, it returns 0 and false.
 func (db *Database) authenticateUser(creds Credentials) (int, bool) {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
@@ -255,6 +280,9 @@ func (db *Database) authenticateUser(creds Credentials) (int, bool) {
 	return 0, false
 }
 
+// findSessionByUid returns a Session pointer and index given a user ID.
+// It is used for checking existing sessions. If a session doesn't
+// exist, it returns nil, false index, and false.
 func (db *Database) findSessionByUid(uid int) (*Session, int, bool) {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
@@ -266,6 +294,9 @@ func (db *Database) findSessionByUid(uid int) (*Session, int, bool) {
 	return nil, -1, false
 }
 
+// findCredentialsByUsername returns a Credentials pointer given
+// a username. It is used for checking existing accounts. If
+// credentials don't exist, it returns a nil pointer.
 func (db *Database) findCredentialsByUsername(username string) *Credentials {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
@@ -277,6 +308,9 @@ func (db *Database) findCredentialsByUsername(username string) *Credentials {
 	return nil
 }
 
+// findTransactionsByUid returns a list of Transaction given
+// a user ID. If there are no existing user transactions,
+// it returns an empty list.
 func (db *Database) findTransactionsByUid(uid int) []Transaction {
 	transactions := []Transaction{}
 	db.Mu.Lock()
@@ -289,6 +323,9 @@ func (db *Database) findTransactionsByUid(uid int) []Transaction {
 	return transactions
 }
 
+// findTransactionByTid returns a Transaction pointer and index given a user ID.
+// It is used for checking existing transactions. If a transaction doesn't
+// exist, it returns nil, false index, and false.
 func (db *Database) findTransactionByTid(uid, tid int) (*Transaction, int, bool) {
 	transactions := db.findTransactionsByUid(uid)
 	db.Mu.Lock()
@@ -301,6 +338,8 @@ func (db *Database) findTransactionByTid(uid, tid int) (*Transaction, int, bool)
 	return nil, -1, false
 }
 
+// deleteAllTransactionsByUid deletes all transactions
+// of a user given a user ID.
 func (db *Database) deleteAllTransactionsByUid(uid int) {
 	transactions := []Transaction{}
 	db.Mu.Lock()
@@ -313,6 +352,9 @@ func (db *Database) deleteAllTransactionsByUid(uid int) {
 	db.Mu.Unlock()
 }
 
+// findCategoryByCid returns a Category pointer given
+// a category ID. It is used for checking existing categories. If
+// a category doesn't exist, it returns a nil pointer.
 func (db *Database) findCategoryByCid(cid int) *Category {
 	db.Mu.Lock()
 	defer db.Mu.Unlock()
@@ -324,6 +366,8 @@ func (db *Database) findCategoryByCid(cid int) *Category {
 	return nil
 }
 
+// validateNewTransaction validates a POST or PUT transaction request.
+// It sends a message to the client if it is a bad request.
 func (db *Database) validateNewTransaction(w http.ResponseWriter, r *http.Request, trans Transaction) bool {
 	if tempCategory := db.findCategoryByCid(trans.CategoryID); tempCategory == nil {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")

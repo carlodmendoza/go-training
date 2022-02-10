@@ -12,6 +12,12 @@ import (
 	"sync"
 )
 
+/*
+	Main program for running the server, handling requests,
+	and starting and reading the file-based storage.
+	Author: Carlo Mendoza
+*/
+
 func main() {
 	fmt.Println("Server running in port 8080")
 	db := startDatabase("data/data.json")
@@ -20,6 +26,9 @@ func main() {
 	}
 }
 
+// startDatabase reads the contents of a json file
+// that acts as the database. The result is returned
+// as a Database.
 func startDatabase(filepath string) *models.Database {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -38,6 +47,8 @@ func startDatabase(filepath string) *models.Database {
 	return result
 }
 
+// updateDatabase writes to a json file that acts as the
+// database given a Database.
 func updateDatabase(db *models.Database) {
 	db.Mu.Lock()
 	byteData, err := json.MarshalIndent(db, "", "    ")
@@ -50,6 +61,10 @@ func updateDatabase(db *models.Database) {
 	db.Mu.Unlock()
 }
 
+// handler handles requests to the server depending on the
+// request URL given a Database. It updates the database
+// every client request. It also authorizes a user to make
+// requests given a request token.
 func handler(db *models.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var transID int

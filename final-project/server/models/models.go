@@ -1,5 +1,11 @@
 package models
 
+/*
+	Models program contains all structs being
+	used by the server.
+	Author: Carlo Mendoza
+*/
+
 type User struct {
 	UserID int    `json:"userID"`
 	Name   string `json:"name"`
