@@ -1,5 +1,11 @@
 package models
 
+/*
+	Models program contains all structs being
+	used by the server.
+	Author: Carlo Mendoza
+*/
+
 type Response struct {
 	Message string
 	Success bool

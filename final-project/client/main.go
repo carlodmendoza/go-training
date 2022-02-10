@@ -14,6 +14,12 @@ import (
 	"time"
 )
 
+/*
+	Main program for running the client, making requests
+	to the server, and generating reports.
+	Author: Carlo Mendoza
+*/
+
 const baseURL = "http://localhost:8080/"
 
 var cookie *http.Cookie
@@ -94,6 +100,7 @@ func main() {
 	}
 }
 
+// signin gets input from user for making a sign in request.
 func signin(c http.Client) bool {
 	url := baseURL + "signin"
 
@@ -107,6 +114,7 @@ func signin(c http.Client) bool {
 	return getResponse(c, url, "POST", reqBody, false)
 }
 
+// signup gets input from user for making a sign up request.
 func signup(c http.Client) {
 	url := baseURL + "signup"
 
@@ -122,6 +130,8 @@ func signup(c http.Client) {
 	getResponse(c, url, "POST", reqBody, false)
 }
 
+// viewTransactions prints the user transactions
+// received from the server.
 func viewTransactions(c http.Client, transID int) {
 	var url string
 	if transID == 0 {
@@ -146,6 +156,9 @@ func viewTransactions(c http.Client, transID int) {
 	}
 }
 
+// getTransactions handles sending a GET request to get transactions.
+// If transaction ID is 0, it gets all transactions; otherwise, it
+// gets only a specific transaction.
 func getTransactions(c http.Client, url string, transID int) ([]models.Transaction, bool) {
 	var transactionList []models.Transaction
 	var transaction models.Transaction
@@ -183,6 +196,9 @@ func getTransactions(c http.Client, url string, transID int) ([]models.Transacti
 	}
 }
 
+// addEditTransaction handles sending a POST or PUT request to add or edit
+// a transaction. If transaction ID is 0, it adds a new transaction; otherwise,
+// it edits a specific transaction.
 func addEditTransaction(c http.Client, transID int) {
 	var amount float64
 	var url, date, notes string
@@ -215,6 +231,9 @@ func addEditTransaction(c http.Client, transID int) {
 	}
 }
 
+// deleteTransactions handles sending a DELETE request to delete transactions.
+// If transaction ID is 0, it deletes all transactions; otherwise, it
+// deletes only a specific transaction.
 func deleteTransactions(c http.Client, transID int) {
 	var url, reqBody string
 
@@ -226,6 +245,8 @@ func deleteTransactions(c http.Client, transID int) {
 	getResponse(c, url, "DELETE", reqBody, true)
 }
 
+// getResponse handles sending a general request if client is
+// expecting a JSON with message and success fields.
 func getResponse(c http.Client, url, method, reqBody string, requireCookie bool) bool {
 	var response models.Response
 	var req *http.Request
@@ -262,6 +283,7 @@ func getResponse(c http.Client, url, method, reqBody string, requireCookie bool)
 	return response.Success
 }
 
+// getCategories handles sending a GET request to get categories.
 func getCategories(c http.Client) []models.Category {
 	url := baseURL + "categories"
 	var categories []models.Category
@@ -282,6 +304,8 @@ func getCategories(c http.Client) []models.Category {
 	return categories
 }
 
+// getCategoryDetails returns a formatted string containing
+// details of a category given a category ID.
 func getCategoryDetails(catID int) string {
 	for _, cat := range categories {
 		if catID == cat.CategoryID {
@@ -291,6 +315,8 @@ func getCategoryDetails(catID int) string {
 	return fmt.Sprint(catID)
 }
 
+// printCategoryDetails prints a list of all categories as
+// reference for user when adding or updating transactions.
 func printCategoryDetails() {
 	expense := "Expense: \n"
 	income := "Income: \n"
@@ -305,6 +331,8 @@ func printCategoryDetails() {
 	fmt.Print(income)
 }
 
+// findCategoryDetailByCid returns the name or type of
+// a category given a category ID and requested detail.
 func findCategoryDetailByCid(catID int, detail string) string {
 	for _, cat := range categories {
 		if catID == cat.CategoryID {
@@ -318,6 +346,8 @@ func findCategoryDetailByCid(catID int, detail string) string {
 	return ""
 }
 
+// generateReport handles sending a GET request to get all transactions
+// then prints a summary report based on the retrieved user transactions.
 func generateReport(c http.Client) {
 	url := baseURL + "transactions"
 	if trans, ok := getTransactions(c, url, 0); ok {
