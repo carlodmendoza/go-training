@@ -15,7 +15,7 @@ import (
 func main() {
 	fmt.Println("Server running in port 8080")
 	db := startDatabase("data/data.json")
-	if err := http.ListenAndServe("localhost:8080", handler(db)); err != nil {
+	if err := http.ListenAndServe(":8080", handler(db)); err != nil {
 		log.Fatalf("Error ListenAndServe(): %s", err.Error())
 	}
 }
