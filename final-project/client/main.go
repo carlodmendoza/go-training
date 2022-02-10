@@ -20,7 +20,7 @@ import (
 	Author: Carlo Mendoza
 */
 
-const baseURL = "http://localhost:8080/"
+const baseURL = "http://server:8080/"
 
 var cookie *http.Cookie
 var categories []models.Category
