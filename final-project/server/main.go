@@ -1,105 +1,97 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"final-project/server/data"
 	"final-project/server/models"
-	"final-project/server/utils"
+	"final-project/server/redis"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"sync"
 )
 
 /*
 	Main program for running the server, handling requests,
-	and starting and reading the file-based storage.
+	and initializing data in Redis.
 	Author: Carlo Mendoza
 */
 
 func main() {
 	fmt.Println("Server running on port 8080")
-	db := startDatabase("data/data.json")
-	if err := http.ListenAndServe(":8080", handler(db)); err != nil {
+	initRedis()
+	if err := http.ListenAndServe("localhost:8080", handler()); err != nil {
 		log.Fatalf("Error ListenAndServe(): %s", err.Error())
 	}
 }
 
-// startDatabase reads the contents of a json file
-// that acts as the database. The result is returned
-// as a Database.
-func startDatabase(filepath string) *models.Database {
-	file, err := os.Open(filepath)
-	if err != nil {
-		log.Fatalf("Failed to open json file: %s", err.Error())
-	}
-	defer file.Close()
-	byteData, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatalf("Failed to read json file: %s", err.Error())
-	}
-	var result *models.Database
-	if err := json.Unmarshal([]byte(byteData), &result); err != nil {
-		log.Fatalf("Failed to parse json file: %s", err.Error())
-	}
-	result.Mu = sync.Mutex{}
-	return result
-}
+// initRedis stores the initial data in Redis.
+func initRedis() {
+	ctx := context.Background()
+	redis.Client.FlushDB(ctx)
 
-// updateDatabase writes to a json file that acts as the
-// database given a Database.
-func updateDatabase(db *models.Database) {
-	db.Mu.Lock()
-	byteData, err := json.MarshalIndent(db, "", "    ")
-	if err != nil {
-		fmt.Printf("Failed to marshal data: %s\n", err.Error())
+	redis.Client.SAdd(ctx, "uids", 1)
+	redis.Client.Set(ctx, "NextUserID", 1, 0)
+	redis.Client.Set(ctx, "NextTransactionID", 10, 0)
+
+	credsKey := fmt.Sprintf("%v:%v", "credentials", 1)
+	redis.Client.HSet(ctx, credsKey, map[string]interface{}{"Username": "cmendoza", "Password": "123"})
+
+	for i, trans := range data.Transactions {
+		transMap := make(map[string]interface{})
+		transMap["Amount"] = trans.Amount
+		transMap["Date"] = trans.Date
+		transMap["Notes"] = trans.Notes
+		transMap["CategoryID"] = trans.CategoryID
+		trKey := fmt.Sprintf("%v:%v:%v", "transactions", 1, i+1)
+		redis.Client.HSet(ctx, trKey, transMap)
 	}
-	if err := ioutil.WriteFile("data/data.json", byteData, 0644); err != nil {
-		fmt.Printf("Failed to write data: %s\n", err.Error())
+	for i, cat := range data.Categories {
+		catMap := make(map[string]interface{})
+		catMap["Name"] = cat.Name
+		catMap["Type"] = cat.Type
+		catKey := fmt.Sprintf("%v:%v", "categories", i+1)
+		redis.Client.HSet(ctx, catKey, catMap)
 	}
-	db.Mu.Unlock()
 }
 
 // handler handles requests to the server depending on the
-// request URL given a Database. It updates the database
-// every client request. It also authorizes a user to make
+// request URL. It also authorizes a user to make
 // requests given a request token.
-func handler(db *models.Database) http.HandlerFunc {
+func handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var transID int
+		// var transID int
 		if r.URL.Path == "/signin" {
-			db.Signin(w, r)
-		} else if r.URL.Path == "/signup" {
-			db.Signup(w, r)
-		} else if r.URL.Path == "/transactions" {
-			uid := db.FindUidByToken(r)
-			if uid == -1 || uid == 0 {
-				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Unauthorized login.")
-			} else {
-				db.ProcessTransaction(w, r, uid)
-			}
-		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
-			uid := db.FindUidByToken(r)
-			if uid == -1 || uid == 0 {
-				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Unauthorized login.")
-			} else {
-				db.ProcessTransactionID(w, r, uid, transID)
-			}
-		} else if r.URL.Path == "/categories" {
-			uid := db.FindUidByToken(r)
-			if uid == -1 || uid == 0 {
-				w.WriteHeader(http.StatusUnauthorized)
-				utils.SendMessageWithBody(w, false, "Unauthorized login.")
-			} else {
-				db.ProcessCategories(w, r)
-			}
-		} else {
-			w.WriteHeader(http.StatusNotImplemented)
-			utils.SendMessage(w, "Invalid URL or request")
+			models.Signin(w, r)
 		}
-		updateDatabase(db)
+		// } else if r.URL.Path == "/signup" {
+		// 	db.Signup(w, r)
+		// } else if r.URL.Path == "/transactions" {
+		// 	uid := db.FindUidByToken(r)
+		// 	if uid == -1 || uid == 0 {
+		// 		w.WriteHeader(http.StatusUnauthorized)
+		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
+		// 	} else {
+		// 		db.ProcessTransaction(w, r, uid)
+		// 	}
+		// } else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
+		// 	uid := db.FindUidByToken(r)
+		// 	if uid == -1 || uid == 0 {
+		// 		w.WriteHeader(http.StatusUnauthorized)
+		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
+		// 	} else {
+		// 		db.ProcessTransactionID(w, r, uid, transID)
+		// 	}
+		// } else if r.URL.Path == "/categories" {
+		// 	uid := db.FindUidByToken(r)
+		// 	if uid == -1 || uid == 0 {
+		// 		w.WriteHeader(http.StatusUnauthorized)
+		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
+		// 	} else {
+		// 		db.ProcessCategories(w, r)
+		// 	}
+		// } else {
+		// 	w.WriteHeader(http.StatusNotImplemented)
+		// 	utils.SendMessage(w, "Invalid URL or request")
+		// }
 	}
 }
