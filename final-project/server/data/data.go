@@ -67,11 +67,11 @@ var Transactions = []models.Transaction{
 
 var Categories = []models.Category{
 	{
-		Name: "Food \u0026 Beverage",
+		Name: "Food and Beverages",
 		Type: "Expense",
 	},
 	{
-		Name: "Gifts \u0026 Donations",
+		Name: "Gifts and Donations",
 		Type: "Expense",
 	},
 	{
@@ -79,11 +79,11 @@ var Categories = []models.Category{
 		Type: "Expense",
 	},
 	{
-		Name: "Fees \u0026 Charges",
+		Name: "Fees and Charges",
 		Type: "Expense",
 	},
 	{
-		Name: "Bills \u0026 Utilities",
+		Name: "Bills and Utilities",
 		Type: "Expense",
 	},
 	{
@@ -95,7 +95,7 @@ var Categories = []models.Category{
 		Type: "Expense",
 	},
 	{
-		Name: "Friends \u0026 Lover",
+		Name: "Friends and Lover",
 		Type: "Expense",
 	},
 	{
@@ -107,7 +107,7 @@ var Categories = []models.Category{
 		Type: "Expense",
 	},
 	{
-		Name: "Health \u0026 Fitness",
+		Name: "Health and Fitness",
 		Type: "Expense",
 	},
 	{

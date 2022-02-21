@@ -204,15 +204,7 @@ func ProcessCategories(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		categories := []Category{}
-		catids, _ := redis.Client.SMembers(context.Background(), "catids").Result()
-		for _, catid := range catids {
-			catKey := fmt.Sprintf("%v:%v", "categories", catid)
-			cat, _ := redis.Client.HGetAll(context.Background(), catKey).Result()
-			catID, _ := strconv.Atoi(cat["CategoryID"])
-			category := Category{CategoryID: catID, Name: cat["Name"], Type: cat["Type"]}
-			categories = append(categories, category)
-		}
+		categories := returnCategories()
 		if err := json.NewEncoder(w).Encode(categories); err != nil {
 			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -348,6 +340,21 @@ func createNewUser(username, password string) {
 // 	db.Transactions = transactions
 // 	db.Mu.Unlock()
 // }
+
+// returnCategories gets all category data from Redis
+// and returns an array of Category
+func returnCategories() []Category {
+	categories := []Category{}
+	catids, _ := redis.Client.SMembers(context.Background(), "catids").Result()
+	for _, catid := range catids {
+		catKey := fmt.Sprintf("%v:%v", "categories", catid)
+		cat, _ := redis.Client.HGetAll(context.Background(), catKey).Result()
+		catID, _ := strconv.Atoi(cat["CategoryID"])
+		category := Category{CategoryID: catID, Name: cat["Name"], Type: cat["Type"]}
+		categories = append(categories, category)
+	}
+	return categories
+}
 
 // // findCategoryByCid returns a Category pointer given
 // // a category ID. It is used for checking existing categories. If
