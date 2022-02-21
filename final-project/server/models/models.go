@@ -28,6 +28,7 @@ type Transaction struct {
 }
 
 type Category struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	CategoryID int    `json:"categoryID"`
+	Name       string `json:"name"`
+	Type       string `json:"type"`
 }

@@ -46,7 +46,9 @@ func initRedis() {
 		redis.Client.HSet(ctx, trKey, transMap)
 	}
 	for i, cat := range data.Categories {
+		redis.Client.SAdd(ctx, "catids", i+1)
 		catMap := make(map[string]interface{})
+		catMap["CategoryID"] = i + 1
 		catMap["Name"] = cat.Name
 		catMap["Type"] = cat.Type
 		catKey := fmt.Sprintf("%v:%v", "categories", i+1)
@@ -64,6 +66,8 @@ func handler() http.HandlerFunc {
 			models.Signin(w, r)
 		} else if r.URL.Path == "/signup" {
 			models.Signup(w, r)
+		} else if r.URL.Path == "/categories" {
+			models.ProcessCategories(w, r)
 		}
 		// } else if r.URL.Path == "/transactions" {
 		// 	uid := db.FindUidByToken(r)
@@ -80,14 +84,6 @@ func handler() http.HandlerFunc {
 		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
 		// 	} else {
 		// 		db.ProcessTransactionID(w, r, uid, transID)
-		// 	}
-		// } else if r.URL.Path == "/categories" {
-		// 	uid := db.FindUidByToken(r)
-		// 	if uid == -1 || uid == 0 {
-		// 		w.WriteHeader(http.StatusUnauthorized)
-		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
-		// 	} else {
-		// 		db.ProcessCategories(w, r)
 		// 	}
 		// } else {
 		// 	w.WriteHeader(http.StatusNotImplemented)

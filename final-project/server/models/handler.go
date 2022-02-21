@@ -195,41 +195,62 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 // 	}
 // }
 
-// // ProcessCategories handles a categories/ request by a client.
-// // The client can get all categories.
-// func (db *Database) ProcessCategories(w http.ResponseWriter, r *http.Request) {
-// 	switch r.Method {
-// 	case "GET":
-// 		w.Header().Set("Content-Type", "application/json")
-// 		if err := json.NewEncoder(w).Encode(db.Categories); err != nil {
-// 			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-// 			w.WriteHeader(http.StatusInternalServerError)
-// 			utils.SendMessageWithBody(w, false, "500 Internal Server Error")
-// 			return
-// 		}
-// 	default:
-// 		w.WriteHeader(http.StatusMethodNotAllowed)
-// 		utils.SendMessage(w, "405 Method not allowed")
-// 	}
-// }
+// ProcessCategories handles a categories/ request by a client.
+// The client can get all categories.
+func ProcessCategories(w http.ResponseWriter, r *http.Request) {
+	if _, ok := authenticateToken(w, r); !ok {
+		return
+	}
 
-// // FindUidByToken returns the user ID given a token
-// // sent from a request cookie.
-// func (db *Database) FindUidByToken(r *http.Request) int {
-// 	tokenCookie, err := r.Cookie("Token")
-// 	if err != nil {
-// 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-// 		return -1
-// 	}
-// 	db.Mu.Lock()
-// 	defer db.Mu.Unlock()
-// 	for _, sesh := range db.Sessions {
-// 		if tokenCookie.Value == sesh.Token {
-// 			return sesh.UserID
-// 		}
-// 	}
-// 	return 0
-// }
+	switch r.Method {
+	case "GET":
+		categories := []Category{}
+		catids, _ := redis.Client.SMembers(context.Background(), "catids").Result()
+		for _, catid := range catids {
+			catKey := fmt.Sprintf("%v:%v", "categories", catid)
+			cat, _ := redis.Client.HGetAll(context.Background(), catKey).Result()
+			catID, _ := strconv.Atoi(cat["CategoryID"])
+			category := Category{CategoryID: catID, Name: cat["Name"], Type: cat["Type"]}
+			categories = append(categories, category)
+		}
+		if err := json.NewEncoder(w).Encode(categories); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			utils.SendMessageWithBody(w, false, "500 Internal Server Error")
+			return
+		}
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		utils.SendMessage(w, "405 Method not allowed")
+	}
+}
+
+// authenticateToken checks if token from a request cookie is associated
+// to an existing session. If yes, it returns the corresponding
+// user ID and true boolean; else, it returns 0 and false.
+// If no cookie is found, it returns -1 and false.
+func authenticateToken(w http.ResponseWriter, r *http.Request) (int, bool) {
+	tokenCookie, err := r.Cookie("Token")
+	if err != nil {
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+		w.WriteHeader(http.StatusUnauthorized)
+		utils.SendMessageWithBody(w, false, "Unauthorized login.")
+		return -1, false
+	}
+
+	uids, _ := redis.Client.SMembers(context.Background(), "uids").Result()
+	for _, uid := range uids {
+		seshKey := fmt.Sprintf("%v:%v", "sessions", uid)
+		sesh, _ := redis.Client.HGetAll(context.Background(), seshKey).Result()
+		if tokenCookie.Value == sesh["Token"] {
+			userID, _ := strconv.Atoi(uid)
+			return userID, true
+		}
+	}
+	w.WriteHeader(http.StatusUnauthorized)
+	utils.SendMessageWithBody(w, false, "Unauthorized login.")
+	return 0, false
+}
 
 // authenticateUser returns the user ID and true if given
 // username and password is correct. If not, it returns 0 and false.
