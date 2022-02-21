@@ -30,8 +30,8 @@ func initRedis() {
 	redis.Client.FlushDB(ctx)
 
 	redis.Client.SAdd(ctx, "uids", 1)
-	redis.Client.Set(ctx, "NextUserID", 1, 0)
-	redis.Client.Set(ctx, "NextTransactionID", 10, 0)
+	redis.Client.Set(ctx, "nextUserID", 1, 0)
+	redis.Client.Set(ctx, "nextTransactionID", 10, 0)
 
 	credsKey := fmt.Sprintf("%v:%v", "credentials", 1)
 	redis.Client.HSet(ctx, credsKey, map[string]interface{}{"Username": "cmendoza", "Password": "123"})
@@ -62,9 +62,9 @@ func handler() http.HandlerFunc {
 		// var transID int
 		if r.URL.Path == "/signin" {
 			models.Signin(w, r)
+		} else if r.URL.Path == "/signup" {
+			models.Signup(w, r)
 		}
-		// } else if r.URL.Path == "/signup" {
-		// 	db.Signup(w, r)
 		// } else if r.URL.Path == "/transactions" {
 		// 	uid := db.FindUidByToken(r)
 		// 	if uid == -1 || uid == 0 {

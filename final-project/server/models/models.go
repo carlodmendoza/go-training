@@ -7,13 +7,12 @@ package models
 */
 
 type User struct {
-	UserID int    `json:"userID"`
-	Name   string `json:"name"`
+	UserID int `json:"userID"`
 }
 
 type Session struct {
 	Token     string `json:"token"`
-	Timestamp string `json:"timestamp"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 type Credentials struct {

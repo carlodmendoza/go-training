@@ -38,7 +38,7 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 			utils.SendMessage(w, "400 Bad Request")
 			return
 		}
-		if userID, ok := authenticateUser(creds); ok {
+		if userID, ok := authenticateUser(creds.Username, creds.Password); ok {
 			token := createUserSession(userID)
 			// send token as Cookie to client
 			http.SetCookie(w, &token)
@@ -53,50 +53,37 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// // Signup handles a sign up request by a client.
-// // It checks if an account already exists.
-// func (db *Database) Signup(w http.ResponseWriter, r *http.Request) {
-// 	switch r.Method {
-// 	case "POST":
-// 		var user User
-// 		var creds Credentials
-// 		var reqBody map[string]string
-// 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
-// 			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			utils.SendMessage(w, "400 Bad Request")
-// 			return
-// 		}
-// 		if reqBody["name"] == "" || reqBody["username"] == "" || reqBody["password"] == "" {
-// 			fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			utils.SendMessage(w, "400 Bad Request")
-// 		} else {
-// 			if tempUser := db.findCredentialsByUsername(reqBody["username"]); tempUser != nil {
-// 				w.WriteHeader(http.StatusConflict)
-// 				utils.SendMessageWithBody(w, false, "Account already exists.")
-// 			} else {
-// 				db.Mu.Lock()
-// 				db.NextUserID++
-// 				user.UserID = db.NextUserID
-// 				user.Name = reqBody["name"]
-// 				db.Users = append(db.Users, user)
-
-// 				creds.Username = reqBody["username"]
-// 				creds.Password = reqBody["password"]
-// 				creds.UserID = db.NextUserID
-// 				db.Credentials = append(db.Credentials, creds)
-// 				db.Mu.Unlock()
-
-// 				w.WriteHeader(http.StatusCreated)
-// 				utils.SendMessageWithBody(w, true, "Signed up successfully!")
-// 			}
-// 		}
-// 	default:
-// 		w.WriteHeader(http.StatusMethodNotAllowed)
-// 		utils.SendMessage(w, "405 Method not allowed")
-// 	}
-// }
+// Signup handles a sign up request by a client.
+// It checks if an account already exists.
+func Signup(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		var creds Credentials
+		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			utils.SendMessage(w, "400 Bad Request")
+			return
+		}
+		if creds.Username == "" || creds.Password == "" {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
+			w.WriteHeader(http.StatusBadRequest)
+			utils.SendMessage(w, "400 Bad Request")
+			return
+		}
+		if userExists := findCredentialsByUsername(creds.Username); userExists {
+			w.WriteHeader(http.StatusConflict)
+			utils.SendMessageWithBody(w, false, "Account already exists.")
+			return
+		}
+		createNewUser(creds.Username, creds.Password)
+		w.WriteHeader(http.StatusCreated)
+		utils.SendMessageWithBody(w, true, "Signed up successfully!")
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		utils.SendMessage(w, "405 Method not allowed")
+	}
+}
 
 // // ProcessTransaction handles a transaction/ request by a client
 // // given a user ID. The client can either get all transactions,
@@ -244,14 +231,14 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 // 	return 0
 // }
 
-// authenticateUser returns the user ID and true given a username.
-// If username doesn't exist, it returns 0 and false.
-func authenticateUser(credentials Credentials) (int, bool) {
+// authenticateUser returns the user ID and true if given
+// username and password is correct. If not, it returns 0 and false.
+func authenticateUser(username, password string) (int, bool) {
 	uids, _ := redis.Client.SMembers(context.Background(), "uids").Result()
 	for _, uid := range uids {
 		credKey := fmt.Sprintf("%v:%v", "credentials", uid)
 		creds, _ := redis.Client.HGetAll(context.Background(), credKey).Result()
-		if credentials.Username == creds["Username"] && credentials.Password == creds["Password"] {
+		if username == creds["Username"] && password == creds["Password"] {
 			userID, _ := strconv.Atoi(uid)
 			return userID, true
 		}
@@ -274,19 +261,28 @@ func createUserSession(uid int) http.Cookie {
 	return cookie
 }
 
-// // findCredentialsByUsername returns a Credentials pointer given
-// // a username. It is used for checking existing accounts. If
-// // credentials don't exist, it returns a nil pointer.
-// func (db *Database) findCredentialsByUsername(username string) *Credentials {
-// 	db.Mu.Lock()
-// 	defer db.Mu.Unlock()
-// 	for _, user := range db.Credentials {
-// 		if username == user.Username {
-// 			return &user
-// 		}
-// 	}
-// 	return nil
-// }
+// findCredentialsByUsername returns true if a given username
+// already has an existing account. Otherwise, it returns false.
+func findCredentialsByUsername(username string) bool {
+	uids, _ := redis.Client.SMembers(context.Background(), "uids").Result()
+	for _, uid := range uids {
+		credKey := fmt.Sprintf("%v:%v", "credentials", uid)
+		creds, _ := redis.Client.HGetAll(context.Background(), credKey).Result()
+		if username == creds["Username"] {
+			return true
+		}
+	}
+	return false
+}
+
+// createNewUser creates a new user with user ID,
+// its username and password, and stores it in Redis.
+func createNewUser(username, password string) {
+	nextUid, _ := redis.Client.Incr(context.Background(), "nextUserID").Result()
+	redis.Client.SAdd(context.Background(), "uids", nextUid)
+	credsKey := fmt.Sprintf("%v:%v", "credentials", nextUid)
+	redis.Client.HSet(context.Background(), credsKey, map[string]interface{}{"Username": username, "Password": password})
+}
 
 // // findTransactionsByUid returns a list of Transaction given
 // // a user ID. If there are no existing user transactions,
