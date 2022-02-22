@@ -5,6 +5,7 @@ import (
 	"final-project/server/data"
 	"final-project/server/models"
 	"final-project/server/redis"
+	"final-project/server/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -64,7 +65,7 @@ func initRedis() {
 // requests given a request token.
 func handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// var transID int
+		var transID int
 		if r.URL.Path == "/signin" {
 			models.Signin(w, r)
 		} else if r.URL.Path == "/signup" {
@@ -73,18 +74,11 @@ func handler() http.HandlerFunc {
 			models.ProcessCategories(w, r)
 		} else if r.URL.Path == "/transactions" {
 			models.ProcessTransaction(w, r)
+		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
+			models.ProcessTransactionID(w, r, transID)
+		} else {
+			w.WriteHeader(http.StatusNotImplemented)
+			utils.SendMessage(w, "Invalid URL or request")
 		}
-		// } else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
-		// 	uid := db.FindUidByToken(r)
-		// 	if uid == -1 || uid == 0 {
-		// 		w.WriteHeader(http.StatusUnauthorized)
-		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
-		// 	} else {
-		// 		db.ProcessTransactionID(w, r, uid, transID)
-		// 	}
-		// } else {
-		// 	w.WriteHeader(http.StatusNotImplemented)
-		// 	utils.SendMessage(w, "Invalid URL or request")
-		// }
 	}
 }

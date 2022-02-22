@@ -38,15 +38,15 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 			utils.SendMessage(w, "400 Bad Request")
 			return
 		}
-		if userID, ok := authenticateUser(credentials); ok {
-			token := createUserSession(userID)
-			// send token as Cookie to client
-			http.SetCookie(w, &token)
-			utils.SendMessageWithBody(w, true, "Logged in successfully!")
-		} else {
+		userID, ok := authenticateUser(credentials)
+		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
 			utils.SendMessageWithBody(w, false, "Invalid username or password.")
+			return
 		}
+		token := createUserSession(userID)
+		http.SetCookie(w, &token)
+		utils.SendMessageWithBody(w, true, "Logged in successfully!")
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		utils.SendMessage(w, "405 Method not allowed")
@@ -85,12 +85,14 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ProcessTransaction handles a transaction/ request by a client
-// given a user ID. The client can either get all transactions,
-// add new transaction, or delete all transactions.
+// ProcessTransaction handles a transaction/ request by a client.
+// The client can either get all transactions, add new transaction,
+// or delete all transactions.
 func ProcessTransaction(w http.ResponseWriter, r *http.Request) {
-	userID, ok := authenticateToken(w, r)
+	userID, ok := authenticateToken(r)
 	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		utils.SendMessageWithBody(w, false, "Unauthorized login.")
 		return
 	}
 
@@ -102,7 +104,6 @@ func ProcessTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			utils.SendMessageWithBody(w, false, "500 Internal Server Error")
-			return
 		}
 	case "POST":
 		var transaction Transaction
@@ -119,7 +120,7 @@ func ProcessTransaction(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if ok := validateNewTransaction(w, r, transaction); ok {
-			createNewTransaction(transaction, userID)
+			createNewTransaction(transaction, userID, true)
 			w.WriteHeader(http.StatusCreated)
 			utils.SendMessageWithBody(w, true, "Transaction added successfully!")
 		}
@@ -136,66 +137,59 @@ func ProcessTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// // ProcessTransactionID handles a transaction/id request by a client
-// // given a user ID and a transaction ID. The client can either get,
-// // update, or delete a transaction.
-// func (db *Database) ProcessTransactionID(w http.ResponseWriter, r *http.Request, userID, transID int) {
-// 	switch r.Method {
-// 	case "GET":
-// 		if trans, _, ok := db.findTransactionByTid(userID, transID); ok {
-// 			w.Header().Set("Content-Type", "application/json")
-// 			if err := json.NewEncoder(w).Encode(&trans); err != nil {
-// 				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-// 				w.WriteHeader(http.StatusInternalServerError)
-// 				utils.SendMessageWithBody(w, false, "500 Internal Server Error")
-// 			}
-// 		} else {
-// 			w.WriteHeader(http.StatusNotFound)
-// 			utils.SendMessageWithBody(w, false, "Transaction not found.")
-// 		}
-// 	case "PUT":
-// 		if trans, index, ok := db.findTransactionByTid(userID, transID); ok {
-// 			transaction := *trans
-// 			if err := json.NewDecoder(r.Body).Decode(&transaction); err != nil {
-// 				fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-// 				w.WriteHeader(http.StatusBadRequest)
-// 				utils.SendMessage(w, "400 Bad Request")
-// 				return
-// 			}
-// 			if ok := db.validateNewTransaction(w, r, transaction); ok {
-// 				db.Mu.Lock()
-// 				// ensures that original IDs are not changed
-// 				transaction.TransactionID = trans.TransactionID
-// 				transaction.UserID = trans.UserID
-// 				db.Transactions[index] = transaction
-// 				db.Mu.Unlock()
+// ProcessTransactionID handles a transaction/id request by a client
+// given a transaction ID. The client can either get, update, or
+// delete a transaction.
+func ProcessTransactionID(w http.ResponseWriter, r *http.Request, transID int) {
+	userID, ok := authenticateToken(r)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		utils.SendMessageWithBody(w, false, "Unauthorized login.")
+		return
+	}
+	transaction, ok := findTransactionByTid(userID, transID)
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		utils.SendMessageWithBody(w, false, "Transaction not found.")
+		return
+	}
 
-// 				utils.SendMessageWithBody(w, true, "Transaction updated successfully!")
-// 			}
-// 		} else {
-// 			w.WriteHeader(http.StatusNotFound)
-// 			utils.SendMessageWithBody(w, false, "Transaction not found.")
-// 		}
-// 	case "DELETE":
-// 		if _, index, ok := db.findTransactionByTid(userID, transID); ok {
-// 			db.Mu.Lock()
-// 			db.Transactions = append(db.Transactions[:index], db.Transactions[index+1:]...)
-// 			db.Mu.Unlock()
-// 			utils.SendMessageWithBody(w, true, "Transaction deleted successfully.")
-// 		} else {
-// 			w.WriteHeader(http.StatusNotFound)
-// 			utils.SendMessageWithBody(w, false, "Transaction not found.")
-// 		}
-// 	default:
-// 		w.WriteHeader(http.StatusMethodNotAllowed)
-// 		utils.SendMessage(w, "405 Method not allowed")
-// 	}
-// }
+	switch r.Method {
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(&transaction); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			utils.SendMessageWithBody(w, false, "500 Internal Server Error")
+		}
+	case "PUT":
+		newTransaction := transaction
+		if err := json.NewDecoder(r.Body).Decode(&newTransaction); err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			utils.SendMessage(w, "400 Bad Request")
+			return
+		}
+		if ok := validateNewTransaction(w, r, newTransaction); ok {
+			newTransaction.TransactionID = transaction.TransactionID
+			createNewTransaction(newTransaction, userID, false)
+			utils.SendMessageWithBody(w, true, "Transaction updated successfully!")
+		}
+	case "DELETE":
+		deleteTransaction(userID, transaction.TransactionID)
+		utils.SendMessageWithBody(w, true, "Transaction deleted successfully.")
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		utils.SendMessage(w, "405 Method not allowed")
+	}
+}
 
 // ProcessCategories handles a categories/ request by a client.
 // The client can get all categories.
 func ProcessCategories(w http.ResponseWriter, r *http.Request) {
-	if _, ok := authenticateToken(w, r); !ok {
+	if _, ok := authenticateToken(r); !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		utils.SendMessageWithBody(w, false, "Unauthorized login.")
 		return
 	}
 
@@ -218,12 +212,10 @@ func ProcessCategories(w http.ResponseWriter, r *http.Request) {
 // to an existing session. If yes, it returns the corresponding
 // user ID and true boolean; else, it returns 0 and false.
 // If no cookie is found, it returns -1 and false.
-func authenticateToken(w http.ResponseWriter, r *http.Request) (int, bool) {
+func authenticateToken(r *http.Request) (int, bool) {
 	tokenCookie, err := r.Cookie("Token")
 	if err != nil {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-		w.WriteHeader(http.StatusUnauthorized)
-		utils.SendMessageWithBody(w, false, "Unauthorized login.")
 		return -1, false
 	}
 
@@ -236,8 +228,6 @@ func authenticateToken(w http.ResponseWriter, r *http.Request) (int, bool) {
 			return userID, true
 		}
 	}
-	w.WriteHeader(http.StatusUnauthorized)
-	utils.SendMessageWithBody(w, false, "Unauthorized login.")
 	return 0, false
 }
 
@@ -314,36 +304,43 @@ func findTransactionsByUid(uid int) []Transaction {
 }
 
 // createNewTransaction creates a new Transaction, associates it to
-// a user ID, and stores it in Redis.
-func createNewTransaction(transaction Transaction, uid int) {
-	nextTrid, _ := redis.Client.Incr(context.Background(), "nextTransactionID").Result()
+// a user ID, and stores it in Redis. If isNew is true, a new transaction
+// is created; else, it is only updated.
+func createNewTransaction(transaction Transaction, uid int, isNew bool) {
+	var trid int64
 	trUsrKey := fmt.Sprintf("%v:%v", "transactions", uid)
-	redis.Client.SAdd(context.Background(), trUsrKey, nextTrid)
-
 	transMap := make(map[string]interface{})
-	transMap["TransactionID"] = nextTrid
+	if isNew {
+		trid, _ = redis.Client.Incr(context.Background(), "nextTransactionID").Result()
+		redis.Client.SAdd(context.Background(), trUsrKey, trid)
+	} else {
+		trid = int64(transaction.TransactionID)
+	}
+	transMap["TransactionID"] = trid
 	transMap["Amount"] = transaction.Amount
 	transMap["Date"] = transaction.Date
 	transMap["Notes"] = transaction.Notes
 	transMap["CategoryID"] = transaction.CategoryID
-	trKey := fmt.Sprintf("%v:%v", trUsrKey, nextTrid)
+	trKey := fmt.Sprintf("%v:%v", trUsrKey, trid)
 	redis.Client.HSet(context.Background(), trKey, transMap)
 }
 
-// // findTransactionByTid returns a Transaction pointer and index given a user ID.
-// // It is used for checking existing transactions. If a transaction doesn't
-// // exist, it returns nil, false index, and false.
-// func (db *Database) findTransactionByTid(uid, tid int) (*Transaction, int, bool) {
-// 	transactions := db.findTransactionsByUid(uid)
-// 	db.Mu.Lock()
-// 	defer db.Mu.Unlock()
-// 	for i, trans := range transactions {
-// 		if tid == trans.TransactionID {
-// 			return &trans, i, true
-// 		}
-// 	}
-// 	return nil, -1, false
-// }
+// findTransactionByTid returns a Transaction and true if given
+// transaction ID exists in given user ID. Otherwise, it returns
+// an empty Transaction and false.
+func findTransactionByTid(uid, tid int) (Transaction, bool) {
+	trUsrKey := fmt.Sprintf("%v:%v", "transactions", uid)
+	if isMember, _ := redis.Client.SIsMember(context.Background(), trUsrKey, tid).Result(); isMember {
+		trKey := fmt.Sprintf("%v:%v", trUsrKey, tid)
+		trans, _ := redis.Client.HGetAll(context.Background(), trKey).Result()
+		transID, _ := strconv.Atoi(trans["TransactionID"])
+		transAmount, _ := strconv.ParseFloat(trans["Amount"], 64)
+		transCategoryID, _ := strconv.Atoi(trans["CategoryID"])
+		transaction := Transaction{TransactionID: transID, Amount: transAmount, Date: trans["Date"], Notes: trans["Notes"], CategoryID: transCategoryID}
+		return transaction, true
+	}
+	return Transaction{}, false
+}
 
 // deleteAllTransactionsByUid deletes all transactions
 // of a user from Redis given a user ID. If successful,
@@ -360,6 +357,15 @@ func deleteAllTransactionsByUid(uid int) bool {
 		redis.Client.Del(context.Background(), trKey)
 	}
 	return true
+}
+
+// deleteTransaction deletes a transaction of a user
+// from Redis given a user ID and transaction ID.
+func deleteTransaction(uid, tid int) {
+	trUsrKey := fmt.Sprintf("%v:%v", "transactions", uid)
+	redis.Client.SRem(context.Background(), trUsrKey, tid)
+	trKey := fmt.Sprintf("%v:%v", trUsrKey, tid)
+	redis.Client.Del(context.Background(), trKey)
 }
 
 // returnCategories gets all category data from Redis
