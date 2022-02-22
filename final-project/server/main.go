@@ -20,7 +20,7 @@ import (
 func main() {
 	fmt.Println("Server running on port 8080")
 	initRedis()
-	if err := http.ListenAndServe("localhost:8080", handler()); err != nil {
+	if err := http.ListenAndServe(":8080", handler()); err != nil {
 		log.Fatalf("Error ListenAndServe(): %s", err.Error())
 	}
 }
@@ -28,11 +28,10 @@ func main() {
 // initRedis stores the initial data in Redis.
 func initRedis() {
 	ctx := context.Background()
-	redis.Client.FlushDB(ctx)
 
 	redis.Client.SAdd(ctx, "uids", 1)
-	redis.Client.Set(ctx, "nextUserID", 1, 0)
-	redis.Client.Set(ctx, "nextTransactionID", 10, 0)
+	redis.Client.SetNX(ctx, "nextUserID", 1, 0)
+	redis.Client.SetNX(ctx, "nextTransactionID", 10, 0)
 
 	credsKey := fmt.Sprintf("%v:%v", "credentials", 1)
 	redis.Client.HSet(ctx, credsKey, map[string]interface{}{"Username": "cmendoza", "Password": "123"})

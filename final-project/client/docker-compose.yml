@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  client:
+    build: ./
+    image: client:latest
+    networks:
+      - final-project_default
+networks:
+  final-project_default:
+    external: true

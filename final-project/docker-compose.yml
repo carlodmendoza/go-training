@@ -1,14 +1,13 @@
 version: "3.8"
 
 services:
-  client:
-    build: ./client
-    image: client:latest
   server:
     build: ./server
     image: server:latest
     ports:
       - 8080:8080
+    depends_on:
+      - redis
   redis:
     image: bitnami/redis:6.2
     ports:

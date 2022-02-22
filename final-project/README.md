@@ -3,31 +3,28 @@
 ## Budget Tracker App (Personal Finance Management)
 This application allows users to sign up for an account, sign in, record and manage their transactions, and generate summary reports for their transactions.
 
-The server and client are both written on Go, and run on Docker.
+The server and client are both written on Go, and run on Docker. All storage needs are being done on Redis, which also runs on Docker.
 
 ## Dependencies
 1. [Go](https://go.dev/doc/install)
 2. [Docker](https://docs.docker.com/get-docker/)
 
 ## Server
-The server uses a JSON file-based storage and can support logging in of multiple users. There are 6 entities:
+The server connects to a Redis client and can support logging in of multiple users. There are 5 entities:
 
-### 1. Database
-This entity acts as a database that contains lists of the other entities. It also assigns IDs, and locks or unlocks itself when it is being accessed.
+### 1. User
+This entity refers to a user account with ID.
 
-### 2. User
-This entity refers to a user account with ID and name.
-
-### 3. Credentials
+### 2. Credentials
 This entity refers to the credentials (username and password) of a user. It is associated to a User entity.
 
-### 4. Session
+### 3. Session
 This entity refers to a client session with token and timestamp. It is associated to a User entity.
 
-### 5. Transaction
+### 4. Transaction
 This entity refers to a transaction with ID, amount, date, and notes. It is associated to a User and Category entities.
 
-### 6. Category
+### 5. Category
 This entity refers to a category of a transaction with name and type. The type is either an "Income" or "Expense" category.
 
 ## Client
@@ -45,15 +42,15 @@ The client is a command line interface (CLI) application that communicates with 
 
 ## Setup Instructions
 
-### Running the server
-To run the server, go to the directory where the docker-compose.yml file is located. Run the following command in the same directory:
+### Running the Redis client and server
+To run the Redis client and server, go to the `final-project/` directory where the docker-compose.yml file is located. Run the following command in the same directory:
 ```
-docker compose up server
+docker compose up
 ```
-This will build and run the server image in a Docker container. The program will run on port 8080.
+This will build and run the Redis client and server images in Docker containers. The Redis client and server program will run on port 6379 and port 8080, respectively.
 
 ### Running the client
-Before running the client, make sure that the server is running on port 8000. To run the client, go to the directory where the docker-compose.yml file is located. Using a separate terminal, run the following command in the same directory:
+Before running the client, make sure that the server is running on port 8080. To run the client, go to the `final-project/client` directory where the docker-compose.yml file is located. Using a separate terminal, run the following command in the same directory:
 ```
 docker compose run client
 ```
