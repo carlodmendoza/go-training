@@ -36,22 +36,25 @@ func initRedis() {
 	credsKey := fmt.Sprintf("%v:%v", "credentials", 1)
 	redis.Client.HSet(ctx, credsKey, map[string]interface{}{"Username": "cmendoza", "Password": "123"})
 
-	for i, trans := range data.Transactions {
+	trUsrKey := fmt.Sprintf("%v:%v", "transactions", 1)
+	for _, trans := range data.Transactions {
+		redis.Client.SAdd(ctx, trUsrKey, trans.TransactionID)
 		transMap := make(map[string]interface{})
+		transMap["TransactionID"] = trans.TransactionID
 		transMap["Amount"] = trans.Amount
 		transMap["Date"] = trans.Date
 		transMap["Notes"] = trans.Notes
 		transMap["CategoryID"] = trans.CategoryID
-		trKey := fmt.Sprintf("%v:%v:%v", "transactions", 1, i+1)
+		trKey := fmt.Sprintf("%v:%v", trUsrKey, trans.TransactionID)
 		redis.Client.HSet(ctx, trKey, transMap)
 	}
-	for i, cat := range data.Categories {
-		redis.Client.SAdd(ctx, "catids", i+1)
+	for _, cat := range data.Categories {
+		redis.Client.SAdd(ctx, "catids", cat.CategoryID)
 		catMap := make(map[string]interface{})
-		catMap["CategoryID"] = i + 1
+		catMap["CategoryID"] = cat.CategoryID
 		catMap["Name"] = cat.Name
 		catMap["Type"] = cat.Type
-		catKey := fmt.Sprintf("%v:%v", "categories", i+1)
+		catKey := fmt.Sprintf("%v:%v", "categories", cat.CategoryID)
 		redis.Client.HSet(ctx, catKey, catMap)
 	}
 }
@@ -68,15 +71,9 @@ func handler() http.HandlerFunc {
 			models.Signup(w, r)
 		} else if r.URL.Path == "/categories" {
 			models.ProcessCategories(w, r)
+		} else if r.URL.Path == "/transactions" {
+			models.ProcessTransaction(w, r)
 		}
-		// } else if r.URL.Path == "/transactions" {
-		// 	uid := db.FindUidByToken(r)
-		// 	if uid == -1 || uid == 0 {
-		// 		w.WriteHeader(http.StatusUnauthorized)
-		// 		utils.SendMessageWithBody(w, false, "Unauthorized login.")
-		// 	} else {
-		// 		db.ProcessTransaction(w, r, uid)
-		// 	}
 		// } else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
 		// 	uid := db.FindUidByToken(r)
 		// 	if uid == -1 || uid == 0 {
