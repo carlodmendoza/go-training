@@ -10,27 +10,28 @@ The server and client are both written on Go, and run on Docker.
 final-project/
 │   docker-compose.yml
 │   go.mod
-│   main.go
+│   main.go             - main file for running the server
 │   README.md
 │   routes.go
 │
 └───client/
 │   
 └───server/
-    │   auth/
-    │   categories/
+    │   auth/           - package for user registration and authentication
+    │   categories/     - package for handling categories of transactions
     │
     └───data/
     │   │   
-    │   └───filebased/
+    │   └───filebased/  - package for file-based DB implementation
     │   │   
-    │   └───redis/
+    │   └───redis/      - package for Redis store implementation  
     │   │
-    │   │   data.go
-    │   └───data.json
+    │   │   data.go     - file for data layer interface implementation 
+    │   └───data.json   - initial data for testing
     │
-    │   sessions/
-    └───transactions/
+    │   sessions/       - package for handling user sessions
+    │   transactions/   - package for handling user transactions
+    └───Dockerfile
 ```
 
 ## Dependencies
