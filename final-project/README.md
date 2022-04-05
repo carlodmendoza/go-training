@@ -8,40 +8,49 @@ The server and client are both written on Go, and run on Docker.
 ## Project Directory
 ```
 final-project/
-│   Taskfile.yml
-│   go.mod
-│   main.go                     - main file for running the server
-│   README.md
-│   routes.go
 │
-└───client/                     - module for client app
+└───client/                
 │   
 └───deploy/
 │   │
 │   └───dev/
 │       │   
-│       └───data/
-│       │   │        
-│       │   └───data.json       - sample data for testing dev
+│       └───client/
+│       │   
+│       └───server/
+│       │   │   
+│       │   └───storage/
+│       │   │   │        
+│       │   │   └───data.json
+│       │   │   
+│       │   │   Dockerfile
+│       │   └───test.http
 │       │ 
-│       │   .env                - environment variables for dev
+│       │   .env
 │       └───docker-compose.yml
 │   
 └───server/
-    │   auth/                   - package for user registration and authentication
-    │   categories/             - package for handling categories of transactions
-    │
-    └───data/
-    │   │   
-    │   └───filebased/          - package for file-based DB implementation
-    │   │   
-    │   └───redis/              - package for Redis store implementation  
-    │   │
-    │   └───data.go             - file for data layer interface implementation 
-    │
-    │   sessions/               - package for handling user sessions
-    │   transactions/           - package for handling user transactions
-    └───Dockerfile
+│   │
+│   └───auth/
+│   │
+│   └───categories/
+│   │
+│   └───storage/
+│   │   │   
+│   │   └───filebased/
+│   │   │   
+│   │   └───redis/
+│   │   │
+│   │   └───storage.go
+│   │
+│   └───transactions/
+│   │
+│   │   go.mod
+│   │   main.go
+│   │   routes.go
+│   └───Taskfile.yml
+│
+└───README.md
 ```
 
 ## Dependencies
