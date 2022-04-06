@@ -1,6 +1,6 @@
 POST http://localhost:8080/signup
 
-{"name": "Carlo Mendoza", "username": "cmendoza", "password": "123"}
+{"username": "cmendoza", "password": "123"}
 
 ###
 
@@ -16,7 +16,7 @@ GET http://localhost:8080/transactions
 
 POST http://localhost:8080/transactions
 
-{"amount": 100, "date":"02-04-2022", "categoryID": 1}
+{"amount": 100, "date":"02-04-2022", "category_id": 1}
 
 ###
 
@@ -38,7 +38,7 @@ POST http://localhost:8080/transactions/1
 
 PUT http://localhost:8080/transactions/1
 
-{"amount": 200, "notes": "Lunch out", "categoryID": 2}
+{"amount": 200, "date":"02-04-2022", "notes": "Lunch out", "category_id": 2}
 
 ###
 

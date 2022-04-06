@@ -1,0 +1,205 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "username": "cmendoza",
+            "password": "123"
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "name": "Food \u0026 Beverage",
+            "type": "Expense"
+        },
+        {
+            "id": 2,
+            "name": "Gifts \u0026 Donations",
+            "type": "Expense"
+        },
+        {
+            "id": 3,
+            "name": "Education",
+            "type": "Expense"
+        },
+        {
+            "id": 4,
+            "name": "Fees \u0026 Charges",
+            "type": "Expense"
+        },
+        {
+            "id": 5,
+            "name": "Bills \u0026 Utilities",
+            "type": "Expense"
+        },
+        {
+            "id": 6,
+            "name": "Transportation",
+            "type": "Expense"
+        },
+        {
+            "id": 7,
+            "name": "Shopping",
+            "type": "Expense"
+        },
+        {
+            "id": 8,
+            "name": "Friends \u0026 Lover",
+            "type": "Expense"
+        },
+        {
+            "id": 9,
+            "name": "Entertainment",
+            "type": "Expense"
+        },
+        {
+            "id": 10,
+            "name": "Travel",
+            "type": "Expense"
+        },
+        {
+            "id": 11,
+            "name": "Health \u0026 Fitness",
+            "type": "Expense"
+        },
+        {
+            "id": 12,
+            "name": "Family",
+            "type": "Expense"
+        },
+        {
+            "id": 13,
+            "name": "Investment",
+            "type": "Expense"
+        },
+        {
+            "id": 14,
+            "name": "Business",
+            "type": "Expense"
+        },
+        {
+            "id": 15,
+            "name": "Insurances",
+            "type": "Expense"
+        },
+        {
+            "id": 16,
+            "name": "Other Expense",
+            "type": "Expense"
+        },
+        {
+            "id": 17,
+            "name": "Salary",
+            "type": "Income"
+        },
+        {
+            "id": 18,
+            "name": "Award",
+            "type": "Income"
+        },
+        {
+            "id": 19,
+            "name": "Interest Money",
+            "type": "Income"
+        },
+        {
+            "id": 20,
+            "name": "Gifts",
+            "type": "Income"
+        },
+        {
+            "id": 21,
+            "name": "Selling",
+            "type": "Income"
+        },
+        {
+            "id": 22,
+            "name": "Other Income",
+            "type": "Income"
+        }
+    ],
+    "transactions": [
+        {
+            "id": 1,
+            "amount": 100,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 1
+        },
+        {
+            "id": 2,
+            "amount": 200,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 2
+        },
+        {
+            "id": 3,
+            "amount": 300,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 3
+        },
+        {
+            "id": 4,
+            "amount": 400,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 4
+        },
+        {
+            "id": 5,
+            "amount": 500,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 5
+        },
+        {
+            "id": 6,
+            "amount": 200,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 17
+        },
+        {
+            "id": 7,
+            "amount": 400,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 18
+        },
+        {
+            "id": 8,
+            "amount": 500,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 19
+        },
+        {
+            "id": 9,
+            "amount": 800,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 20
+        },
+        {
+            "id": 10,
+            "amount": 1000,
+            "date": "02-10-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 21
+        }
+    ],
+    "nextUserID": 1,
+    "nextTransactionID": 10
+}

@@ -5,6 +5,54 @@ This application allows users to sign up for an account, sign in, record and man
 
 The server and client are both written on Go, and run on Docker.
 
+## Project Directory
+```
+final-project/
+│
+└───client/                
+│   
+└───deploy/
+│   │
+│   └───dev/
+│       │   
+│       └───client/
+│       │   
+│       └───server/
+│       │   │   
+│       │   └───storage/
+│       │   │   │        
+│       │   │   └───data.json
+│       │   │   
+│       │   │   Dockerfile
+│       │   └───test.http
+│       │ 
+│       │   .env
+│       └───docker-compose.yml
+│   
+└───server/
+│   │
+│   └───auth/
+│   │
+│   └───categories/
+│   │
+│   └───storage/
+│   │   │   
+│   │   └───filebased/
+│   │   │   
+│   │   └───redis/
+│   │   │
+│   │   └───storage.go
+│   │
+│   └───transactions/
+│   │
+│   │   go.mod
+│   │   main.go
+│   │   routes.go
+│   └───Taskfile.yml
+│
+└───README.md
+```
+
 ## Dependencies
 1. [Go](https://go.dev/doc/install)
 2. [Docker](https://docs.docker.com/get-docker/)
