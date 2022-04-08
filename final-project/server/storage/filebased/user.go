@@ -2,8 +2,12 @@ package filebased
 
 import "server/storage"
 
-func (fdb *FilebasedDB) CreateUser(username, password string) {
+func (fdb *FilebasedDB) CreateUser(username, password string) error {
 	fdb.Mu.Lock()
+	defer func() {
+		fdb.Mu.Unlock()
+		updateDatabase(fdb)
+	}()
 
 	fdb.NextUserID++
 	newUser := storage.User{
@@ -11,33 +15,26 @@ func (fdb *FilebasedDB) CreateUser(username, password string) {
 		Name:     username,
 		Password: password,
 	}
-	fdb.Users = append(fdb.Users, newUser)
+	fdb.Users[username] = newUser
 
-	fdb.Mu.Unlock()
-
-	updateDatabase(fdb)
+	return nil
 }
 
-func (fdb *FilebasedDB) FindUser(username string) bool {
+func (fdb *FilebasedDB) FindUser(username string) (bool, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
-	for _, user := range fdb.Users {
-		if username == user.Name {
-			return true
-		}
-	}
-	return false
+	_, exists := fdb.Users[username]
+	return exists, nil
 }
 
-func (fdb *FilebasedDB) AuthenticateUser(username, password string) (int, bool) {
+func (fdb *FilebasedDB) AuthenticateUser(username, password string) (int, bool, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
-	for _, user := range fdb.Users {
-		if username == user.Name && password == user.Password {
-			return user.ID, true
-		}
+	user, exists := fdb.Users[username]
+	if exists && user.Password == password {
+		return user.ID, true, nil
 	}
-	return 0, false
+	return 0, false, nil
 }

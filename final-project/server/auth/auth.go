@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"server/storage"
@@ -13,6 +14,10 @@ type AuthRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
+
+var (
+	ErrDuplicateUser = errors.New("User already exists")
+)
 
 // Signin handles a sign in request by a client.
 // Upon successful sign in, a generated token
@@ -36,9 +41,13 @@ func Signin(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		uid, ok := db.AuthenticateUser(signinReq.Username, signinReq.Password)
+		uid, ok, err := db.AuthenticateUser(signinReq.Username, signinReq.Password)
 		if !ok {
 			http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
+			return
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -73,12 +82,22 @@ func Signup(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if db.FindUser(signupReq.Username) {
-			http.Error(w, "Account already exists.", http.StatusConflict)
+		exists, err := db.FindUser(signupReq.Username)
+		if exists {
+			http.Error(w, ErrDuplicateUser.Error(), http.StatusConflict)
+			return
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		db.CreateUser(signupReq.Username, signupReq.Password)
+		err = db.CreateUser(signupReq.Username, signupReq.Password)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		_, _ = w.Write([]byte("Signed up successfully!"))
 	default:
@@ -90,7 +109,8 @@ func Signup(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 // client requests.
 func GenerateSessionToken() string {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
+	_, err := rand.Read(b)
+	if err != nil {
 		return ""
 	}
 	return hex.EncodeToString(b)
