@@ -29,15 +29,15 @@ type Transaction struct {
 
 type StorageService interface {
 	// CreateUser creates a new User with ID, name, and password.
-	CreateUser(username, password string)
+	CreateUser(username, password string) error
 
 	// FindUser returns true if a given username already has an existing account.
 	// Otherwise, it returns false.
-	FindUser(username string) bool
+	FindUser(username string) (bool, error)
 
 	// AuthenticateUser returns the User ID and true if given username and password is correct.
 	// Otherwise, it returns 0 and false.
-	AuthenticateUser(username, password string) (int, bool)
+	AuthenticateUser(username, password string) (int, bool, error)
 
 	// CreateSession creates a new Session or updates an existing Session given the User ID,
 	// and returns the Session.

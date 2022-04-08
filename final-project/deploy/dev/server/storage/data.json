@@ -1,11 +1,11 @@
 {
-    "users": [
-        {
+    "users": {
+        "cmendoza": {
             "id": 1,
             "username": "cmendoza",
             "password": "123"
         }
-    ],
+    },
     "categories": [
         {
             "id": 1,
@@ -198,8 +198,17 @@
             "notes": "",
             "uid": 1,
             "cid": 21
+        },
+        {
+            "id": 11,
+            "amount": 100,
+            "date": "02-04-2022",
+            "notes": "",
+            "uid": 1,
+            "cid": 1
         }
     ],
     "nextUserID": 1,
-    "nextTransactionID": 10
+    "nextTransactionID": 11,
+    "Mu": {}
 }
