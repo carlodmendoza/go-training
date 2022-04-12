@@ -21,7 +21,7 @@ func main() {
 
 // handler handles requests to the server depending on the request URL given a StorageService.
 // It authorizes a user to make requests given a request token.
-func handler(db storage.StorageService) http.HandlerFunc {
+func handler(db storage.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var transID int
 		if r.URL.Path == "/signin" {

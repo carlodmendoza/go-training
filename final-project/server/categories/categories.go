@@ -14,7 +14,7 @@ var (
 
 // ProcessCategories handles a categories/ request by a client.
 // The client can get all categories.
-func ProcessCategories(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
+func ProcessCategories(db storage.Service, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		categories, err := db.GetCategories()

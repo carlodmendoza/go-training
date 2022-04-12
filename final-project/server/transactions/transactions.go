@@ -24,7 +24,7 @@ var (
 // ProcessTransaction handles a transaction/ request by a client
 // given a username. The client can either get all transactions,
 // add new transaction, or delete all transactions.
-func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *http.Request, username string) {
+func ProcessTransaction(db storage.Service, w http.ResponseWriter, r *http.Request, username string) {
 	switch r.Method {
 	case "GET":
 		transactions, err := db.GetTransactions(username)
@@ -88,7 +88,7 @@ func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *htt
 // ProcessTransactionID handles a transaction/id request by a client
 // given a username and a transaction ID. The client can either get,
 // update, or delete a transaction.
-func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *http.Request, username string, transID int) {
+func ProcessTransactionID(db storage.Service, w http.ResponseWriter, r *http.Request, username string, transID int) {
 	transaction, ok, err := db.FindTransaction(username, transID)
 	if !ok {
 		http.Error(w, ErrTransactionNotFound.Error(), http.StatusNotFound)
@@ -150,7 +150,7 @@ func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *h
 
 // validateTransaction validates a POST or PUT transaction request.
 // It sends a message to the client if it is a bad request.
-func validateTransactionRequest(db storage.StorageService, w http.ResponseWriter, r *http.Request, transReq TransactionRequest) bool {
+func validateTransactionRequest(db storage.Service, w http.ResponseWriter, r *http.Request, transReq TransactionRequest) bool {
 	if transReq.Amount == 0 || transReq.Date == "" || transReq.CategoryID == 0 {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
 		http.Error(w, "Missing required fields.", http.StatusBadRequest)
