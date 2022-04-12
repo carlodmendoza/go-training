@@ -11,12 +11,12 @@ import (
 )
 
 type FilebasedDB struct {
-	Users             map[string]storage.User `json:"users"`
-	Sessions          []storage.Session       `json:"sessions"`
-	Categories        []storage.Category      `json:"categories"`
-	Transactions      []storage.Transaction   `json:"transactions"`
-	NextUserID        int                     `json:"nextUserID"`
-	NextTransactionID int                     `json:"nextTransactionID"`
+	Users             map[string]*storage.User    `json:"users"`
+	Sessions          map[string]*storage.Session `json:"sessions"`
+	Categories        []storage.Category          `json:"categories"`
+	Transactions      []storage.Transaction       `json:"transactions"`
+	NextUserID        int                         `json:"nextUserID"`
+	NextTransactionID int                         `json:"nextTransactionID"`
 	Mu                sync.Mutex
 }
 

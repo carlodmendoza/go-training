@@ -1,48 +1,41 @@
 package filebased
 
 import (
-	"server/auth"
 	"server/storage"
 	"time"
 )
 
-func (fdb *FilebasedDB) CreateSession(uid int) storage.Session {
-	newSession := storage.Session{
-		Token:     auth.GenerateSessionToken(),
-		Timestamp: time.Now().Unix(),
-		UserID:    uid,
-	}
-
+func (fdb *FilebasedDB) CreateSession(username, token string) error {
 	fdb.Mu.Lock()
 	defer func() {
 		fdb.Mu.Unlock()
 		updateDatabase(fdb)
 	}()
 
-	sessionExists := false
-	for i, session := range fdb.Sessions {
-		if uid == session.UserID {
-			fdb.Sessions[i] = newSession
-			sessionExists = true
-			break
-		}
+	user := fdb.Users[username]
+	if user.SessionToken != "" {
+		delete(fdb.Sessions, user.SessionToken)
+	}
+	user.SessionToken = token
+
+	newSession := storage.Session{
+		Token:     token,
+		Timestamp: time.Now().Unix(),
+		UserID:    user.ID,
 	}
 
-	if !sessionExists {
-		fdb.Sessions = append(fdb.Sessions, newSession)
-	}
+	fdb.Sessions[token] = &newSession
 
-	return newSession
+	return nil
 }
 
-func (fdb *FilebasedDB) FindSession(token string) int {
+func (fdb *FilebasedDB) FindSession(token string) (int, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
-	for _, session := range fdb.Sessions {
-		if token == session.Token {
-			return session.UserID
-		}
+	session, exists := fdb.Sessions[token]
+	if exists && session.Token == token {
+		return session.UserID, nil
 	}
-	return 0
+	return 0, nil
 }

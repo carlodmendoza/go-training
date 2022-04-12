@@ -29,26 +29,23 @@ func handler(db storage.StorageService) http.HandlerFunc {
 		} else if r.URL.Path == "/signup" {
 			auth.Signup(db, w, r)
 		} else if r.URL.Path == "/transactions" {
-			uid, ok := auth.AuthenticateToken(db, r)
-			if !ok {
-				http.Error(w, "Unauthorized login.", http.StatusUnauthorized)
-			} else {
-				transactions.ProcessTransaction(db, w, r, uid)
+			uid := auth.AuthenticateToken(db, w, r)
+			if uid <= 0 {
+				return
 			}
+			transactions.ProcessTransaction(db, w, r, uid)
 		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
-			uid, ok := auth.AuthenticateToken(db, r)
-			if !ok {
-				http.Error(w, "Unauthorized login.", http.StatusUnauthorized)
-			} else {
-				transactions.ProcessTransactionID(db, w, r, uid, transID)
+			uid := auth.AuthenticateToken(db, w, r)
+			if uid <= 0 {
+				return
 			}
+			transactions.ProcessTransactionID(db, w, r, uid, transID)
 		} else if r.URL.Path == "/categories" {
-			_, ok := auth.AuthenticateToken(db, r)
-			if !ok {
-				http.Error(w, "Unauthorized login.", http.StatusUnauthorized)
-			} else {
-				categories.ProcessCategories(db, w, r)
+			uid := auth.AuthenticateToken(db, w, r)
+			if uid <= 0 {
+				return
 			}
+			categories.ProcessCategories(db, w, r)
 		} else {
 			http.Error(w, "Invalid URL or request", http.StatusNotImplemented)
 		}

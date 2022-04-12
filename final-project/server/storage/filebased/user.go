@@ -15,7 +15,7 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 		Name:     username,
 		Password: password,
 	}
-	fdb.Users[username] = newUser
+	fdb.Users[username] = &newUser
 
 	return nil
 }
@@ -28,13 +28,13 @@ func (fdb *FilebasedDB) FindUser(username string) (bool, error) {
 	return exists, nil
 }
 
-func (fdb *FilebasedDB) AuthenticateUser(username, password string) (int, bool, error) {
+func (fdb *FilebasedDB) AuthenticateUser(username, password string) (bool, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
 	user, exists := fdb.Users[username]
 	if exists && user.Password == password {
-		return user.ID, true, nil
+		return true, nil
 	}
-	return 0, false, nil
+	return false, nil
 }
