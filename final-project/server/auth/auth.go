@@ -32,7 +32,7 @@ func Signin(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&signinReq)
 		if err != nil {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -79,7 +79,7 @@ func Signup(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 
 		err := json.NewDecoder(r.Body).Decode(&signupReq)
 		if err != nil {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -130,7 +130,7 @@ func generateSessionToken() string {
 func AuthenticateToken(db storage.StorageService, w http.ResponseWriter, r *http.Request) int {
 	tokenCookie, err := r.Cookie("Token")
 	if err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 		http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
 		return -1
 	}

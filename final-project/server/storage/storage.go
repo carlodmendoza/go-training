@@ -48,11 +48,11 @@ type StorageService interface {
 	FindSession(token string) (int, error)
 
 	// GetCategories returns the list of Category.
-	GetCategories() []Category
+	GetCategories() ([]Category, error)
 
 	// FindCategory returns true if a given Category ID exists.
 	// Otherwise, it returns false.
-	FindCategory(cid int) bool
+	FindCategory(cid int) (bool, error)
 
 	// CreateTransaction creates a new Transaction and associates it to a User ID.
 	CreateTransaction(tr Transaction)

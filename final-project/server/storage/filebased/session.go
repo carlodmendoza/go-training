@@ -24,7 +24,7 @@ func (fdb *FilebasedDB) CreateSession(username, token string) error {
 		UserID:    user.ID,
 	}
 
-	fdb.Sessions[token] = &newSession
+	fdb.Sessions[token] = newSession
 
 	return nil
 }
