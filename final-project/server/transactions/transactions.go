@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"server/categories"
 	"server/storage"
 	"time"
 )
@@ -120,13 +121,18 @@ func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *h
 // validateTransaction validates a POST or PUT transaction request.
 // It sends a message to the client if it is a bad request.
 func validateTransactionRequest(db storage.StorageService, w http.ResponseWriter, r *http.Request, transReq TransactionRequest) bool {
-	if !db.FindCategory(transReq.CategoryID) {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Category doesn't exist.")
-		http.Error(w, "Category doesn't exist.", http.StatusNotFound)
+	ok, err := db.FindCategory(transReq.CategoryID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return false
+	}
+	if !ok {
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, categories.ErrInvalidCategory)
+		http.Error(w, categories.ErrInvalidCategory.Error(), http.StatusNotFound)
 		return false
 	}
 	if _, err := time.Parse("01-02-2006", transReq.Date); err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
