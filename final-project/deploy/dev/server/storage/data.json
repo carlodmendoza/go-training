@@ -3,9 +3,11 @@
         "cmendoza": {
             "id": 1,
             "username": "cmendoza",
-            "password": "123"
+            "password": "123",
+            "session_token": ""
         }
     },
+    "sessions": {},
     "categories": [
         {
             "id": 1,

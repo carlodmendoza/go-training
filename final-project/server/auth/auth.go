@@ -17,6 +17,8 @@ type AuthRequest struct {
 
 var (
 	ErrDuplicateUser = errors.New("User already exists")
+	ErrInvalidLogin  = errors.New("Invalid username or password")
+	ErrInvalidToken  = errors.New("Invalid or missing token")
 )
 
 // Signin handles a sign in request by a client.
@@ -41,9 +43,9 @@ func Signin(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		uid, ok, err := db.AuthenticateUser(signinReq.Username, signinReq.Password)
+		ok, err := db.AuthenticateUser(signinReq.Username, signinReq.Password)
 		if !ok {
-			http.Error(w, "Invalid username or password.", http.StatusUnauthorized)
+			http.Error(w, ErrInvalidLogin.Error(), http.StatusUnauthorized)
 			return
 		}
 		if err != nil {
@@ -51,10 +53,16 @@ func Signin(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		session := db.CreateSession(uid)
+		token := generateSessionToken()
+		err = db.CreateSession(signinReq.Username, token)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		http.SetCookie(w, &http.Cookie{
 			Name:  "Token",
-			Value: session.Token,
+			Value: token,
 		})
 		_, _ = w.Write([]byte("Logged in successfully!"))
 	default:
@@ -107,7 +115,7 @@ func Signup(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 
 // GenerateSessionToken returns a token for authorizing
 // client requests.
-func GenerateSessionToken() string {
+func generateSessionToken() string {
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -118,18 +126,23 @@ func GenerateSessionToken() string {
 
 // AuthenticateToken checks if token from a request cookie is associated
 // to an existing session. If yes, it returns the corresponding
-// user ID and true boolean; else, it returns 0 and false.
-// If no cookie is found, it returns -1 and false.
-func AuthenticateToken(db storage.StorageService, r *http.Request) (int, bool) {
+// user ID; else, it returns 0. If no cookie is found, it returns -1.
+func AuthenticateToken(db storage.StorageService, w http.ResponseWriter, r *http.Request) int {
 	tokenCookie, err := r.Cookie("Token")
 	if err != nil {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
-		return -1, false
+		http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
+		return -1
 	}
 
-	uid := db.FindSession(tokenCookie.Value)
+	uid, err := db.FindSession(tokenCookie.Value)
 	if uid == 0 {
-		return uid, false
+		http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
+		return uid
 	}
-	return uid, true
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return 0
+	}
+	return uid
 }

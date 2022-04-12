@@ -1,15 +1,16 @@
 package storage
 
 type User struct {
-	ID       int    `json:"id"`
-	Name     string `json:"username"`
-	Password string `json:"password"`
+	ID           int    `json:"id"`
+	Name         string `json:"username"`
+	Password     string `json:"password"`
+	SessionToken string `json:"session_token"`
 }
 
 type Session struct {
 	Token     string `json:"token"`
 	Timestamp int64  `json:"timestamp"`
-	UserID    int    `json:"uid"`
+	UserID    int    `json:"user_id"`
 }
 
 type Category struct {
@@ -28,24 +29,23 @@ type Transaction struct {
 }
 
 type StorageService interface {
-	// CreateUser creates a new User with ID, name, and password.
+	// CreateUser creates a new User with ID, name, password, and empty session token.
 	CreateUser(username, password string) error
 
 	// FindUser returns true if a given username already has an existing account.
 	// Otherwise, it returns false.
 	FindUser(username string) (bool, error)
 
-	// AuthenticateUser returns the User ID and true if given username and password is correct.
-	// Otherwise, it returns 0 and false.
-	AuthenticateUser(username, password string) (int, bool, error)
+	// AuthenticateUser returns true if given username and password is correct.
+	// Otherwise, it returns false.
+	AuthenticateUser(username, password string) (bool, error)
 
-	// CreateSession creates a new Session or updates an existing Session given the User ID,
-	// and returns the Session.
-	CreateSession(uid int) Session
+	// CreateSession creates a new Session or updates an existing Session given the authenticated username and generated token.
+	CreateSession(username, token string) error
 
 	// FindSession returns the associated User ID given a Session token.
 	// If no associated User is found, it returns 0.
-	FindSession(token string) int
+	FindSession(token string) (int, error)
 
 	// GetCategories returns the list of Category.
 	GetCategories() []Category
