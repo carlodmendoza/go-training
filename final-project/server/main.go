@@ -15,7 +15,7 @@ func main() {
 	fmt.Println("Server running on port 8080")
 	err := http.ListenAndServe(":8080", handler(filebased.FileDB))
 	if err != nil {
-		log.Fatalf("Error ListenAndServe(): %s", err.Error())
+		log.Fatalf("Error ListenAndServe(): %s", err)
 	}
 }
 
@@ -29,20 +29,20 @@ func handler(db storage.StorageService) http.HandlerFunc {
 		} else if r.URL.Path == "/signup" {
 			auth.Signup(db, w, r)
 		} else if r.URL.Path == "/transactions" {
-			uid := auth.AuthenticateToken(db, w, r)
-			if uid <= 0 {
+			user := auth.AuthenticateToken(db, w, r)
+			if user == "" {
 				return
 			}
-			transactions.ProcessTransaction(db, w, r, uid)
+			transactions.ProcessTransaction(db, w, r, user)
 		} else if n, _ := fmt.Sscanf(r.URL.Path, "/transactions/%d", &transID); n == 1 {
-			uid := auth.AuthenticateToken(db, w, r)
-			if uid <= 0 {
+			user := auth.AuthenticateToken(db, w, r)
+			if user == "" {
 				return
 			}
-			transactions.ProcessTransactionID(db, w, r, uid, transID)
+			transactions.ProcessTransactionID(db, w, r, user, transID)
 		} else if r.URL.Path == "/categories" {
-			uid := auth.AuthenticateToken(db, w, r)
-			if uid <= 0 {
+			user := auth.AuthenticateToken(db, w, r)
+			if user == "" {
 				return
 			}
 			categories.ProcessCategories(db, w, r)
