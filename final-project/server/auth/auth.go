@@ -126,23 +126,23 @@ func generateSessionToken() string {
 
 // AuthenticateToken checks if token from a request cookie is associated
 // to an existing session. If yes, it returns the corresponding
-// user ID; else, it returns 0. If no cookie is found, it returns -1.
-func AuthenticateToken(db storage.StorageService, w http.ResponseWriter, r *http.Request) int {
+// username. If not, or no cookie is found, it returns an empty string.
+func AuthenticateToken(db storage.StorageService, w http.ResponseWriter, r *http.Request) string {
 	tokenCookie, err := r.Cookie("Token")
 	if err != nil {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 		http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
-		return -1
+		return ""
 	}
 
-	uid, err := db.FindSession(tokenCookie.Value)
-	if uid == 0 {
+	username, err := db.FindSession(tokenCookie.Value)
+	if username == "" {
 		http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
-		return uid
+		return ""
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return 0
+		return ""
 	}
-	return uid
+	return username
 }

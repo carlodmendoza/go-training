@@ -11,9 +11,10 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 
 	fdb.NextUserID++
 	newUser := storage.User{
-		ID:       fdb.NextUserID,
-		Name:     username,
-		Password: password,
+		ID:           fdb.NextUserID,
+		Name:         username,
+		Password:     password,
+		Transactions: map[int]struct{}{},
 	}
 	fdb.Users[username] = &newUser
 

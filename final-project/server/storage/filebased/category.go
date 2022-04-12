@@ -14,7 +14,6 @@ func (fdb *FilebasedDB) GetCategories() ([]storage.Category, error) {
 	for _, v := range fdb.Categories {
 		categories = append(categories, v)
 	}
-
 	sort.Slice(categories, func(i, j int) bool {
 		return categories[i].ID < categories[j].ID
 	})

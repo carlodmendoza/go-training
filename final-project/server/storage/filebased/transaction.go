@@ -1,9 +1,16 @@
 package filebased
 
-import "server/storage"
+import (
+	"server/storage"
+	"sort"
+)
 
-func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) {
+func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 	fdb.Mu.Lock()
+	defer func() {
+		fdb.Mu.Unlock()
+		updateDatabase(fdb)
+	}()
 
 	fdb.NextTransactionID++
 	newTransaction := storage.Transaction{
@@ -11,94 +18,85 @@ func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) {
 		Amount:     tr.Amount,
 		Date:       tr.Date,
 		Notes:      tr.Notes,
-		UserID:     tr.UserID,
+		Username:   tr.Username,
 		CategoryID: tr.CategoryID,
 	}
-	fdb.Transactions = append(fdb.Transactions, newTransaction)
+	fdb.Transactions[fdb.NextTransactionID] = newTransaction
 
-	fdb.Mu.Unlock()
+	user := fdb.Users[tr.Username]
+	user.Transactions[fdb.NextTransactionID] = struct{}{}
 
-	updateDatabase(fdb)
+	return nil
 }
 
-func (fdb *FilebasedDB) GetTransactions(uid int) []storage.Transaction {
+func (fdb *FilebasedDB) GetTransactions(username string) ([]storage.Transaction, error) {
 	transactions := []storage.Transaction{}
 
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
-	for _, transaction := range fdb.Transactions {
-		if uid == transaction.UserID {
-			transactions = append(transactions, transaction)
-		}
+	for k := range fdb.Users[username].Transactions {
+		transactions = append(transactions, fdb.Transactions[k])
 	}
+	sort.Slice(transactions, func(i, j int) bool {
+		return transactions[i].ID < transactions[j].ID
+	})
 
-	return transactions
+	return transactions, nil
 }
 
-func (fdb *FilebasedDB) UpdateTransaction(tr storage.Transaction) {
+func (fdb *FilebasedDB) UpdateTransaction(tr storage.Transaction) error {
 	fdb.Mu.Lock()
 	defer func() {
 		fdb.Mu.Unlock()
 		updateDatabase(fdb)
 	}()
 
-	for i, transaction := range fdb.Transactions {
-		if tr.ID == transaction.ID {
-			fdb.Transactions[i] = tr
-			break
-		}
-	}
+	fdb.Transactions[tr.ID] = tr
+
+	return nil
 }
 
-func (fdb *FilebasedDB) DeleteTransactions(uid int) bool {
-	if len(fdb.GetTransactions(uid)) == 0 {
-		return false
-	}
-
-	transactions := []storage.Transaction{}
-
+func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
 	fdb.Mu.Lock()
 	defer func() {
 		fdb.Mu.Unlock()
 		updateDatabase(fdb)
 	}()
 
-	for _, transaction := range fdb.Transactions {
-		if uid != transaction.UserID {
-			transactions = append(transactions, transaction)
-		}
+	user := fdb.Users[username]
+	if len(user.Transactions) == 0 {
+		return false, nil
 	}
 
-	fdb.Transactions = transactions
-	return true
+	for k := range user.Transactions {
+		delete(fdb.Transactions, k)
+	}
+	user.Transactions = map[int]struct{}{}
+
+	return true, nil
 }
 
-func (fdb *FilebasedDB) DeleteTransaction(uid, tid int) {
+func (fdb *FilebasedDB) DeleteTransaction(username string, tid int) error {
 	fdb.Mu.Lock()
 	defer func() {
 		fdb.Mu.Unlock()
 		updateDatabase(fdb)
 	}()
 
-	for i, transaction := range fdb.Transactions {
-		if tid == transaction.ID {
-			fdb.Transactions = append(fdb.Transactions[:i], fdb.Transactions[i+1:]...)
-			break
-		}
-	}
+	delete(fdb.Transactions, tid)
+	delete(fdb.Users[username].Transactions, tid)
+
+	return nil
 }
 
-func (fdb *FilebasedDB) FindTransaction(uid, tid int) (storage.Transaction, bool) {
-	transactions := fdb.GetTransactions(uid)
-
+func (fdb *FilebasedDB) FindTransaction(username string, tid int) (storage.Transaction, bool, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
-	for _, transaction := range transactions {
-		if tid == transaction.ID {
-			return transaction, true
-		}
+	transaction, exists := fdb.Transactions[tid]
+	if exists && transaction.Username == username {
+		return transaction, true, nil
 	}
-	return storage.Transaction{}, false
+	return storage.Transaction{}, false, nil
 }

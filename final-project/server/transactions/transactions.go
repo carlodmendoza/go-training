@@ -2,6 +2,7 @@ package transactions
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"server/categories"
@@ -16,15 +17,25 @@ type TransactionRequest struct {
 	CategoryID int     `json:"category_id"`
 }
 
+var (
+	ErrTransactionNotFound = errors.New("No transaction/s found")
+)
+
 // ProcessTransaction handles a transaction/ request by a client
-// given a user ID. The client can either get all transactions,
+// given a username. The client can either get all transactions,
 // add new transaction, or delete all transactions.
-func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *http.Request, userID int) {
+func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *http.Request, username string) {
 	switch r.Method {
 	case "GET":
-		err := json.NewEncoder(w).Encode(db.GetTransactions(userID))
+		transactions, err := db.GetTransactions(username)
 		if err != nil {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(transactions)
+		if err != nil {
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -33,14 +44,8 @@ func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *htt
 
 		err := json.NewDecoder(r.Body).Decode(&transactionReq)
 		if err != nil {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		if transactionReq.Amount == 0 || transactionReq.Date == "" || transactionReq.CategoryID == 0 {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
-			http.Error(w, "Missing required fields.", http.StatusBadRequest)
 			return
 		}
 
@@ -52,17 +57,28 @@ func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *htt
 			Amount:     transactionReq.Amount,
 			Date:       transactionReq.Date,
 			Notes:      transactionReq.Notes,
-			UserID:     userID,
+			Username:   username,
 			CategoryID: transactionReq.CategoryID,
 		}
-		db.CreateTransaction(transaction)
+		err = db.CreateTransaction(transaction)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		_, _ = w.Write([]byte("Transaction added successfully!"))
 	case "DELETE":
-		if !db.DeleteTransactions(userID) {
-			http.Error(w, "No transactions found.", http.StatusNotFound)
+		ok, err := db.DeleteTransactions(username)
+		if !ok {
+			http.Error(w, ErrTransactionNotFound.Error(), http.StatusNotFound)
 			return
 		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		_, _ = w.Write([]byte("All transactions deleted successfully."))
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -70,12 +86,16 @@ func ProcessTransaction(db storage.StorageService, w http.ResponseWriter, r *htt
 }
 
 // ProcessTransactionID handles a transaction/id request by a client
-// given a user ID and a transaction ID. The client can either get,
+// given a username and a transaction ID. The client can either get,
 // update, or delete a transaction.
-func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *http.Request, userID, transID int) {
-	transaction, ok := db.FindTransaction(userID, transID)
+func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *http.Request, username string, transID int) {
+	transaction, ok, err := db.FindTransaction(username, transID)
 	if !ok {
-		http.Error(w, "Transaction not found.", http.StatusNotFound)
+		http.Error(w, ErrTransactionNotFound.Error(), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -83,7 +103,7 @@ func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *h
 	case "GET":
 		err := json.NewEncoder(w).Encode(transaction)
 		if err != nil {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "PUT":
@@ -91,7 +111,7 @@ func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *h
 
 		err := json.NewDecoder(r.Body).Decode(&transactionReq)
 		if err != nil {
-			fmt.Printf("Error in %s: %s\n", r.URL.Path, err.Error())
+			fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -105,13 +125,23 @@ func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *h
 			Amount:     transactionReq.Amount,
 			Date:       transactionReq.Date,
 			Notes:      transactionReq.Notes,
-			UserID:     userID,
+			Username:   username,
 			CategoryID: transactionReq.CategoryID,
 		}
-		db.UpdateTransaction(transaction)
+		err = db.UpdateTransaction(transaction)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		_, _ = w.Write([]byte("Transaction updated successfully!"))
 	case "DELETE":
-		db.DeleteTransaction(userID, transID)
+		err := db.DeleteTransaction(username, transID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		_, _ = w.Write([]byte("Transaction deleted successfully."))
 	default:
 		http.Error(w, "", http.StatusMethodNotAllowed)
@@ -121,20 +151,28 @@ func ProcessTransactionID(db storage.StorageService, w http.ResponseWriter, r *h
 // validateTransaction validates a POST or PUT transaction request.
 // It sends a message to the client if it is a bad request.
 func validateTransactionRequest(db storage.StorageService, w http.ResponseWriter, r *http.Request, transReq TransactionRequest) bool {
-	ok, err := db.FindCategory(transReq.CategoryID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if transReq.Amount == 0 || transReq.Date == "" || transReq.CategoryID == 0 {
+		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
+		http.Error(w, "Missing required fields.", http.StatusBadRequest)
 		return false
 	}
+
+	ok, err := db.FindCategory(transReq.CategoryID)
 	if !ok {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, categories.ErrInvalidCategory)
 		http.Error(w, categories.ErrInvalidCategory.Error(), http.StatusNotFound)
 		return false
 	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return false
+	}
+
 	if _, err := time.Parse("01-02-2006", transReq.Date); err != nil {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return false
 	}
+
 	return true
 }
