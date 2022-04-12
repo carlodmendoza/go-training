@@ -25,7 +25,7 @@ var (
 // Upon successful sign in, a generated token
 // is given as a cookie to client for authorizing
 // future requests.
-func Signin(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
+func Signin(db storage.Service, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		var signinReq AuthRequest
@@ -72,7 +72,7 @@ func Signin(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
 
 // Signup handles a sign up request by a client.
 // It checks if an account already exists.
-func Signup(db storage.StorageService, w http.ResponseWriter, r *http.Request) {
+func Signup(db storage.Service, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		var signupReq AuthRequest
@@ -127,7 +127,7 @@ func generateSessionToken() string {
 // AuthenticateToken checks if token from a request cookie is associated
 // to an existing session. If yes, it returns the corresponding
 // username. If not, or no cookie is found, it returns an empty string.
-func AuthenticateToken(db storage.StorageService, w http.ResponseWriter, r *http.Request) string {
+func AuthenticateToken(db storage.Service, w http.ResponseWriter, r *http.Request) string {
 	tokenCookie, err := r.Cookie("Token")
 	if err != nil {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)

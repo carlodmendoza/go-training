@@ -29,7 +29,7 @@ type Transaction struct {
 	CategoryID int     `json:"category_id"`
 }
 
-type StorageService interface {
+type Service interface {
 	// CreateUser creates a new User with ID, name, password, empty session token, and empty transaction IDs.
 	CreateUser(username, password string) error
 
