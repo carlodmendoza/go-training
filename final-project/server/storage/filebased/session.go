@@ -24,6 +24,7 @@ func (fdb *FilebasedDB) CreateSession(username, token string) error {
 		delete(fdb.Sessions, user.SessionToken)
 	}
 	user.SessionToken = token
+	fdb.Users[username] = user
 
 	return nil
 }
