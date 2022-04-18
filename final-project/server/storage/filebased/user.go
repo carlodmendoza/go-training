@@ -21,7 +21,7 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 	return nil
 }
 
-func (fdb *FilebasedDB) FindUser(username string) (bool, error) {
+func (fdb *FilebasedDB) UserExists(username string) (bool, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 

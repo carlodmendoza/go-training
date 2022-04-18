@@ -21,7 +21,7 @@ func (fdb *FilebasedDB) GetCategories() ([]storage.Category, error) {
 	return categories, nil
 }
 
-func (fdb *FilebasedDB) FindCategory(cid int) (bool, error) {
+func (fdb *FilebasedDB) CategoryExists(cid int) (bool, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 

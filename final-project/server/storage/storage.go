@@ -33,9 +33,9 @@ type Service interface {
 	// CreateUser creates a new User with ID, name, password, empty session token, and empty transaction IDs.
 	CreateUser(username, password string) error
 
-	// FindUser returns true if a given username already has an existing account.
+	// UserExists returns true if a given username already has an existing account.
 	// Otherwise, it returns false.
-	FindUser(username string) (bool, error)
+	UserExists(username string) (bool, error)
 
 	// AuthenticateUser returns true if given username and password is correct.
 	// Otherwise, it returns false.
@@ -45,16 +45,15 @@ type Service interface {
 	// It also associates a Session to a User.
 	CreateSession(username, token string) error
 
-	// FindSession returns the associated username given a Session token.
-	// If no associated User is found, it returns an empty string.
-	FindSession(token string) (string, error)
+	// FindSession returns a Session given a token.
+	FindSession(token string) (Session, error)
 
 	// GetCategories returns the list of Category.
 	GetCategories() ([]Category, error)
 
-	// FindCategory returns true if a given Category ID exists.
+	// CategoryExists returns true if a given Category ID exists.
 	// Otherwise, it returns false.
-	FindCategory(cid int) (bool, error)
+	CategoryExists(cid int) (bool, error)
 
 	// CreateTransaction creates a new Transaction and associates it to a User.
 	CreateTransaction(tr Transaction) error

@@ -90,7 +90,7 @@ func Signup(db storage.Service, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		exists, err := db.FindUser(signupReq.Username)
+		exists, err := db.UserExists(signupReq.Username)
 		if exists {
 			http.Error(w, ErrDuplicateUser.Error(), http.StatusConflict)
 			return
@@ -135,8 +135,8 @@ func AuthenticateToken(db storage.Service, w http.ResponseWriter, r *http.Reques
 		return ""
 	}
 
-	username, err := db.FindSession(tokenCookie.Value)
-	if username == "" {
+	session, err := db.FindSession(tokenCookie.Value)
+	if session.Username == "" {
 		http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
 		return ""
 	}
@@ -144,5 +144,5 @@ func AuthenticateToken(db storage.Service, w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return ""
 	}
-	return username
+	return session.Username
 }

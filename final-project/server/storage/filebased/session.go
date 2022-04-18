@@ -28,9 +28,9 @@ func (fdb *FilebasedDB) CreateSession(username, token string) error {
 	return nil
 }
 
-func (fdb *FilebasedDB) FindSession(token string) (string, error) {
+func (fdb *FilebasedDB) FindSession(token string) (storage.Session, error) {
 	fdb.Mu.Lock()
 	defer fdb.Mu.Unlock()
 
-	return fdb.Sessions[token].Username, nil
+	return fdb.Sessions[token], nil
 }
