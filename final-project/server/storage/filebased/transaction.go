@@ -25,6 +25,7 @@ func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 
 	user := fdb.Users[tr.Username]
 	user.Transactions[fdb.NextTransactionID] = struct{}{}
+	fdb.Users[tr.Username] = user
 
 	return nil
 }
@@ -73,6 +74,7 @@ func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
 		delete(fdb.Transactions, k)
 	}
 	user.Transactions = map[int]struct{}{}
+	fdb.Users[username] = user
 
 	return true, nil
 }

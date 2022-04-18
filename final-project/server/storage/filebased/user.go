@@ -16,7 +16,7 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 		Password:     password,
 		Transactions: map[int]struct{}{},
 	}
-	fdb.Users[username] = &newUser
+	fdb.Users[username] = newUser
 
 	return nil
 }
