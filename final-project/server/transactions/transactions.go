@@ -157,8 +157,8 @@ func validateTransactionRequest(db storage.Service, w http.ResponseWriter, r *ht
 		return false
 	}
 
-	ok, err := db.FindCategory(transReq.CategoryID)
-	if !ok {
+	exists, err := db.CategoryExists(transReq.CategoryID)
+	if !exists {
 		fmt.Printf("Error in %s: %s\n", r.URL.Path, categories.ErrInvalidCategory)
 		http.Error(w, categories.ErrInvalidCategory.Error(), http.StatusNotFound)
 		return false
