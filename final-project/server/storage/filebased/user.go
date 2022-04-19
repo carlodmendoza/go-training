@@ -3,9 +3,9 @@ package filebased
 import "server/storage"
 
 func (fdb *FilebasedDB) CreateUser(username, password string) error {
-	fdb.Mu.Lock()
+	fdb.UserMux.Lock()
 	defer func() {
-		fdb.Mu.Unlock()
+		fdb.UserMux.Unlock()
 		updateDatabase(fdb)
 	}()
 
@@ -22,16 +22,16 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 }
 
 func (fdb *FilebasedDB) UserExists(username string) (bool, error) {
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.UserMux.RLock()
+	defer fdb.UserMux.RUnlock()
 
 	_, exists := fdb.Users[username]
 	return exists, nil
 }
 
 func (fdb *FilebasedDB) AuthenticateUser(username, password string) (bool, error) {
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.UserMux.RLock()
+	defer fdb.UserMux.RUnlock()
 
 	user, exists := fdb.Users[username]
 	if exists && user.Password == password {

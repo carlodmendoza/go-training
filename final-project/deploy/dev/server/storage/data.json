@@ -216,5 +216,8 @@
     },
     "nextUserID": 1,
     "nextTransactionID": 10,
-    "Mu": {}
+    "UserMux": {},
+    "SessionMux": {},
+    "CategoryMux": {},
+    "TransactionMux": {}
 }

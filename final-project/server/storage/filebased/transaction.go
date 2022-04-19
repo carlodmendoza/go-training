@@ -6,9 +6,9 @@ import (
 )
 
 func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
-	fdb.Mu.Lock()
+	fdb.TransactionMux.Lock()
 	defer func() {
-		fdb.Mu.Unlock()
+		fdb.TransactionMux.Unlock()
 		updateDatabase(fdb)
 	}()
 
@@ -23,9 +23,11 @@ func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 	}
 	fdb.Transactions[fdb.NextTransactionID] = newTransaction
 
+	fdb.UserMux.Lock()
 	user := fdb.Users[tr.Username]
 	user.Transactions[fdb.NextTransactionID] = struct{}{}
 	fdb.Users[tr.Username] = user
+	fdb.UserMux.Unlock()
 
 	return nil
 }
@@ -33,12 +35,14 @@ func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 func (fdb *FilebasedDB) GetTransactions(username string) ([]storage.Transaction, error) {
 	transactions := []storage.Transaction{}
 
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.TransactionMux.RLock()
+	defer fdb.TransactionMux.RUnlock()
 
+	fdb.UserMux.RLock()
 	for k := range fdb.Users[username].Transactions {
 		transactions = append(transactions, fdb.Transactions[k])
 	}
+	fdb.UserMux.RUnlock()
 	sort.Slice(transactions, func(i, j int) bool {
 		return transactions[i].ID < transactions[j].ID
 	})
@@ -47,9 +51,9 @@ func (fdb *FilebasedDB) GetTransactions(username string) ([]storage.Transaction,
 }
 
 func (fdb *FilebasedDB) UpdateTransaction(tr storage.Transaction) error {
-	fdb.Mu.Lock()
+	fdb.TransactionMux.Lock()
 	defer func() {
-		fdb.Mu.Unlock()
+		fdb.TransactionMux.Unlock()
 		updateDatabase(fdb)
 	}()
 
@@ -59,12 +63,13 @@ func (fdb *FilebasedDB) UpdateTransaction(tr storage.Transaction) error {
 }
 
 func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
-	fdb.Mu.Lock()
+	fdb.TransactionMux.Lock()
 	defer func() {
-		fdb.Mu.Unlock()
+		fdb.TransactionMux.Unlock()
 		updateDatabase(fdb)
 	}()
 
+	fdb.UserMux.Lock()
 	user := fdb.Users[username]
 	if len(user.Transactions) == 0 {
 		return false, nil
@@ -75,26 +80,30 @@ func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
 	}
 	user.Transactions = map[int]struct{}{}
 	fdb.Users[username] = user
+	fdb.UserMux.Unlock()
 
 	return true, nil
 }
 
 func (fdb *FilebasedDB) DeleteTransaction(username string, tid int) error {
-	fdb.Mu.Lock()
+	fdb.TransactionMux.Lock()
 	defer func() {
-		fdb.Mu.Unlock()
+		fdb.TransactionMux.Unlock()
 		updateDatabase(fdb)
 	}()
 
 	delete(fdb.Transactions, tid)
+
+	fdb.UserMux.Lock()
 	delete(fdb.Users[username].Transactions, tid)
+	fdb.UserMux.Unlock()
 
 	return nil
 }
 
 func (fdb *FilebasedDB) FindTransaction(username string, tid int) (storage.Transaction, bool, error) {
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.TransactionMux.RLock()
+	defer fdb.TransactionMux.RUnlock()
 
 	transaction, exists := fdb.Transactions[tid]
 	if exists && transaction.Username == username {

@@ -8,8 +8,8 @@ import (
 func (fdb *FilebasedDB) GetCategories() ([]storage.Category, error) {
 	categories := []storage.Category{}
 
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.CategoryMux.RLock()
+	defer fdb.CategoryMux.RUnlock()
 
 	for _, v := range fdb.Categories {
 		categories = append(categories, v)
@@ -22,8 +22,8 @@ func (fdb *FilebasedDB) GetCategories() ([]storage.Category, error) {
 }
 
 func (fdb *FilebasedDB) CategoryExists(cid int) (bool, error) {
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.CategoryMux.RLock()
+	defer fdb.CategoryMux.RUnlock()
 
 	_, exists := fdb.Categories[cid]
 	return exists, nil
