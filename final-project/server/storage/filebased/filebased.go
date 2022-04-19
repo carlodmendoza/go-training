@@ -17,7 +17,10 @@ type FilebasedDB struct {
 	Transactions      map[int]storage.Transaction `json:"transactions"`
 	NextUserID        int                         `json:"nextUserID"`
 	NextTransactionID int                         `json:"nextTransactionID"`
-	Mu                sync.Mutex
+	UserMux           sync.RWMutex
+	SessionMux        sync.RWMutex
+	CategoryMux       sync.RWMutex
+	TransactionMux    sync.RWMutex
 }
 
 var filePath = "../deploy/dev/server/storage/data.json"
@@ -50,7 +53,10 @@ func startDatabase(filepath string) *FilebasedDB {
 // updateDatabase writes to a json file that acts as the
 // database given a Database.
 func updateDatabase(fdb *FilebasedDB) {
-	fdb.Mu.Lock()
+	fdb.UserMux.Lock()
+	fdb.SessionMux.Lock()
+	fdb.CategoryMux.Lock()
+	fdb.TransactionMux.Lock()
 
 	byteData, err := json.MarshalIndent(fdb, "", "    ")
 	if err != nil {
@@ -62,5 +68,8 @@ func updateDatabase(fdb *FilebasedDB) {
 		fmt.Printf("Failed to write data: %s\n", err)
 	}
 
-	fdb.Mu.Unlock()
+	fdb.UserMux.Unlock()
+	fdb.SessionMux.Unlock()
+	fdb.CategoryMux.Unlock()
+	fdb.TransactionMux.Unlock()
 }

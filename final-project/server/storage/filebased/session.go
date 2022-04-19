@@ -6,9 +6,9 @@ import (
 )
 
 func (fdb *FilebasedDB) CreateSession(username, token string) error {
-	fdb.Mu.Lock()
+	fdb.SessionMux.Lock()
 	defer func() {
-		fdb.Mu.Unlock()
+		fdb.SessionMux.Unlock()
 		updateDatabase(fdb)
 	}()
 
@@ -19,19 +19,21 @@ func (fdb *FilebasedDB) CreateSession(username, token string) error {
 	}
 	fdb.Sessions[token] = newSession
 
+	fdb.UserMux.Lock()
 	user := fdb.Users[username]
 	if user.SessionToken != "" {
 		delete(fdb.Sessions, user.SessionToken)
 	}
 	user.SessionToken = token
 	fdb.Users[username] = user
+	fdb.UserMux.Unlock()
 
 	return nil
 }
 
 func (fdb *FilebasedDB) FindSession(token string) (storage.Session, error) {
-	fdb.Mu.Lock()
-	defer fdb.Mu.Unlock()
+	fdb.SessionMux.RLock()
+	defer fdb.SessionMux.RUnlock()
 
 	return fdb.Sessions[token], nil
 }
