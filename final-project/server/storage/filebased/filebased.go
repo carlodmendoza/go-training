@@ -2,8 +2,6 @@ package filebased
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"server/storage"
@@ -23,49 +21,41 @@ type FilebasedDB struct {
 	TransactionMux    sync.RWMutex
 }
 
-var filePath = "../deploy/dev/server/storage/data.json"
-var FileDB = startDatabase(filePath)
+var (
+	filePath = "../deploy/dev/server/storage/data.json"
+	filePtr  = openFile(filePath)
+	FileDB   = readFile(filePtr)
+)
 
-// startDatabase reads the contents of a json file
-// that acts as the database. The result is returned
-// as a Database.
-func startDatabase(filepath string) *FilebasedDB {
+func openFile(filepath string) *os.File {
 	file, err := os.Open(filepath)
 	if err != nil {
 		log.Fatalf("Failed to open json file: %s", err)
 	}
 	defer file.Close()
 
-	byteData, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatalf("Failed to read json file: %s", err)
-	}
+	return file
+}
 
+func readFile(file *os.File) *FilebasedDB {
 	var result *FilebasedDB
-	parseErr := json.Unmarshal([]byte(byteData), &result)
-	if parseErr != nil {
-		log.Fatalf("Failed to parse json file: %s", err)
+	err := json.NewDecoder(file).Decode(&result)
+	if err != nil {
+		log.Fatalf("Failed to decode json file: %s", err.Error())
 	}
 
 	return result
 }
 
-// updateDatabase writes to a json file that acts as the
-// database given a Database.
-func updateDatabase(fdb *FilebasedDB) {
+func writeToFile(file *os.File, fdb *FilebasedDB) {
 	fdb.UserMux.Lock()
 	fdb.SessionMux.Lock()
 	fdb.CategoryMux.Lock()
 	fdb.TransactionMux.Lock()
 
-	byteData, err := json.MarshalIndent(fdb, "", "    ")
+	err := json.NewEncoder(file).Encode(fdb)
 	if err != nil {
-		fmt.Printf("Failed to marshal data: %s\n", err)
-	}
-
-	writeErr := ioutil.WriteFile(filePath, byteData, 0644)
-	if writeErr != nil {
-		fmt.Printf("Failed to write data: %s\n", err)
+		log.Fatalf("Failed to encode json file: %s", err.Error())
 	}
 
 	fdb.UserMux.Unlock()

@@ -9,7 +9,7 @@ func (fdb *FilebasedDB) CreateSession(username, token string) error {
 	fdb.SessionMux.Lock()
 	defer func() {
 		fdb.SessionMux.Unlock()
-		updateDatabase(fdb)
+		writeToFile(filePtr, fdb)
 	}()
 
 	newSession := storage.Session{
