@@ -6,7 +6,7 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 	fdb.UserMux.Lock()
 	defer func() {
 		fdb.UserMux.Unlock()
-		writeToFile(filePtr, fdb)
+		appendData(filePtr, fdb)
 	}()
 
 	fdb.NextUserID++

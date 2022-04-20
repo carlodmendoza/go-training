@@ -2,6 +2,7 @@ package filebased
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"os"
 	"server/storage"
@@ -21,33 +22,32 @@ type FilebasedDB struct {
 	TransactionMux    sync.RWMutex
 }
 
-var (
-	filePath = "../deploy/dev/server/storage/data.json"
-	filePtr  = openFile(filePath)
-	FileDB   = readFile(filePtr)
-)
+var filePtr *os.File
 
-func openFile(filepath string) *os.File {
-	file, err := os.Open(filepath)
+func Initialize(filepath string) (*os.File, *FilebasedDB) {
+	file, err := os.OpenFile(filepath, os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
-		log.Fatalf("Failed to open json file: %s", err)
+		log.Fatalf("Failed to open file: %s", err)
 	}
-	defer file.Close()
+	filePtr = file
 
-	return file
+	decoder := json.NewDecoder(file)
+	var lastScan *FilebasedDB
+
+	for {
+		var tempScan *FilebasedDB
+		err := decoder.Decode(&tempScan)
+		switch {
+		case err == io.EOF:
+			return file, lastScan
+		case err != nil:
+			log.Fatalf("Failed to read file: %s", err)
+		}
+		lastScan = tempScan
+	}
 }
 
-func readFile(file *os.File) *FilebasedDB {
-	var result *FilebasedDB
-	err := json.NewDecoder(file).Decode(&result)
-	if err != nil {
-		log.Fatalf("Failed to decode json file: %s", err.Error())
-	}
-
-	return result
-}
-
-func writeToFile(file *os.File, fdb *FilebasedDB) {
+func appendData(file *os.File, fdb *FilebasedDB) {
 	fdb.UserMux.Lock()
 	fdb.SessionMux.Lock()
 	fdb.CategoryMux.Lock()
@@ -55,7 +55,7 @@ func writeToFile(file *os.File, fdb *FilebasedDB) {
 
 	err := json.NewEncoder(file).Encode(fdb)
 	if err != nil {
-		log.Fatalf("Failed to encode json file: %s", err.Error())
+		log.Fatalf("Failed to append data: %s", err)
 	}
 
 	fdb.UserMux.Unlock()

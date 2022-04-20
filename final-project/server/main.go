@@ -4,16 +4,33 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"server/auth"
 	"server/categories"
 	"server/storage"
 	"server/storage/filebased"
 	"server/transactions"
+	"syscall"
 )
 
 func main() {
 	fmt.Println("Server running on port 8080")
-	err := http.ListenAndServe(":8080", handler(filebased.FileDB))
+
+	sigChannel := make(chan os.Signal)
+	signal.Notify(sigChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) //nolint
+
+	// TODO: create env var for file path
+	file, fileDB := filebased.Initialize("../deploy/dev/server/storage/data")
+
+	go func() {
+		<-sigChannel
+		file.Close()
+		log.Fatalf("Shutting down the server")
+	}()
+
+	// TODO: create env var for chosen storage service
+	err := http.ListenAndServe(":8080", handler(fileDB))
 	if err != nil {
 		log.Fatalf("Error ListenAndServe(): %s", err)
 	}
