@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"server/auth"
-	"server/categories"
+	"server/internal/auth"
+	"server/internal/categories"
+	"server/internal/transactions"
 	"server/storage"
 	"server/storage/filebased"
-	"server/transactions"
 	"syscall"
 )
 
