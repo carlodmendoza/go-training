@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"server/categories"
+	"server/internal/categories"
 	"server/storage"
 	"time"
 )
