@@ -9,7 +9,7 @@ func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 	fdb.TransactionMux.Lock()
 	defer func() {
 		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
+		appendData(fdb)
 	}()
 
 	fdb.NextTransactionID++
@@ -54,7 +54,7 @@ func (fdb *FilebasedDB) UpdateTransaction(tr storage.Transaction) error {
 	fdb.TransactionMux.Lock()
 	defer func() {
 		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
+		appendData(fdb)
 	}()
 
 	fdb.Transactions[tr.ID] = tr
@@ -66,7 +66,7 @@ func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
 	fdb.TransactionMux.Lock()
 	defer func() {
 		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
+		appendData(fdb)
 	}()
 
 	fdb.UserMux.Lock()
@@ -89,7 +89,7 @@ func (fdb *FilebasedDB) DeleteTransaction(username string, tid int) error {
 	fdb.TransactionMux.Lock()
 	defer func() {
 		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
+		appendData(fdb)
 	}()
 
 	delete(fdb.Transactions, tid)
