@@ -2,9 +2,10 @@ package transactions
 
 import (
 	"net/http"
-	"server/internal/auth"
-	"server/storage"
 	"strconv"
+
+	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 
 	"github.com/go-chi/chi/v5"
 )

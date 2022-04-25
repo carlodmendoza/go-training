@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"server/storage"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 var (

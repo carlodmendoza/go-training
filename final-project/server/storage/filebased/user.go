@@ -1,6 +1,6 @@
 package filebased
 
-import "server/storage"
+import "github.com/carlodmendoza/go-training/final-project/server/storage"
 
 func (fdb *FilebasedDB) CreateUser(username, password string) error {
 	fdb.UserMux.Lock()

@@ -1,8 +1,9 @@
 package filebased
 
 import (
-	"server/storage"
 	"time"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 func (fdb *FilebasedDB) CreateSession(username, token string) error {

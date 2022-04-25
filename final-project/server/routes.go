@@ -2,11 +2,11 @@ package main
 
 import (
 	"net/http"
-	"server/internal/auth"
-	"server/internal/categories"
-	"server/internal/transactions"
-	"server/storage"
 
+	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
+	"github.com/carlodmendoza/go-training/final-project/server/internal/categories"
+	"github.com/carlodmendoza/go-training/final-project/server/internal/transactions"
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 	"github.com/go-chi/chi/v5"
 )
 

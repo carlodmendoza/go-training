@@ -5,8 +5,9 @@ import (
 	"io"
 	"log"
 	"os"
-	"server/storage"
 	"sync"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 type FilebasedDB struct {

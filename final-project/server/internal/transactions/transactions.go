@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"server/internal/categories"
-	"server/storage"
 	"time"
+
+	"github.com/carlodmendoza/go-training/final-project/server/internal/categories"
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 type TransactionRequest struct {

@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"server/storage/filebased"
 	"syscall"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage/filebased"
 )
 
 func main() {

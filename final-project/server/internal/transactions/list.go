@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"server/internal/auth"
-	"server/storage"
+
+	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 func ListHandler(db storage.Service, w http.ResponseWriter, r *http.Request) {
