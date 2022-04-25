@@ -21,16 +21,19 @@ func main() {
 	signal.Notify(sigChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) //nolint
 
 	// TODO: create env var for file path
-	file, fileDB := filebased.Initialize("../deploy/dev/server/storage/data")
+	storage := filebased.Initialize("../deploy/dev/server/storage/data")
 
 	go func() {
 		<-sigChannel
-		file.Close()
+		err := storage.Shutdown()
+		if err != nil {
+			fmt.Printf("Shutdown error: %s\n", err)
+		}
 		log.Fatalf("Shutting down the server")
 	}()
 
 	// TODO: create env var for chosen storage service
-	err := http.ListenAndServe(":8080", handler(fileDB))
+	err := http.ListenAndServe(":8080", handler(storage))
 	if err != nil {
 		log.Fatalf("Error ListenAndServe(): %s", err)
 	}

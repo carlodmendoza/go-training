@@ -76,4 +76,7 @@ type Service interface {
 	// FindTransaction returns a Transaction and true if given Transaction ID exists in given username.
 	// Otherwise, it returns an empty Transaction and false.
 	FindTransaction(username string, tid int) (Transaction, bool, error)
+
+	// Shutdown shuts the storage service down.
+	Shutdown() error
 }

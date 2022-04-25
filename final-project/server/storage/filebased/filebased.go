@@ -10,6 +10,8 @@ import (
 )
 
 type FilebasedDB struct {
+	File *os.File
+
 	Users             map[string]storage.User     `json:"users"`
 	Sessions          map[string]storage.Session  `json:"sessions"`
 	Categories        map[int]storage.Category    `json:"categories"`
@@ -22,14 +24,11 @@ type FilebasedDB struct {
 	TransactionMux    sync.RWMutex
 }
 
-var filePtr *os.File
-
-func Initialize(filepath string) (*os.File, *FilebasedDB) {
+func Initialize(filepath string) *FilebasedDB {
 	file, err := os.OpenFile(filepath, os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatalf("Failed to open file: %s", err)
 	}
-	filePtr = file
 
 	decoder := json.NewDecoder(file)
 	var lastScan *FilebasedDB
@@ -39,7 +38,8 @@ func Initialize(filepath string) (*os.File, *FilebasedDB) {
 		err := decoder.Decode(&tempScan)
 		switch {
 		case err == io.EOF:
-			return file, lastScan
+			lastScan.File = file
+			return lastScan
 		case err != nil:
 			log.Fatalf("Failed to read file: %s", err)
 		}
@@ -47,13 +47,13 @@ func Initialize(filepath string) (*os.File, *FilebasedDB) {
 	}
 }
 
-func appendData(file *os.File, fdb *FilebasedDB) {
+func appendData(fdb *FilebasedDB) {
 	fdb.UserMux.Lock()
 	fdb.SessionMux.Lock()
 	fdb.CategoryMux.Lock()
 	fdb.TransactionMux.Lock()
 
-	err := json.NewEncoder(file).Encode(fdb)
+	err := json.NewEncoder(fdb.File).Encode(fdb)
 	if err != nil {
 		log.Fatalf("Failed to append data: %s", err)
 	}
@@ -62,4 +62,8 @@ func appendData(file *os.File, fdb *FilebasedDB) {
 	fdb.SessionMux.Unlock()
 	fdb.CategoryMux.Unlock()
 	fdb.TransactionMux.Unlock()
+}
+
+func (fdb *FilebasedDB) Shutdown() error {
+	return fdb.File.Close()
 }
