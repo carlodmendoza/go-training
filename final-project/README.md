@@ -7,50 +7,49 @@ The server and client are both written on Go, and run on Docker.
 
 ## Project Directory
 ```
-final-project/
-│
-└───client/                
-│   
-└───deploy/
-│   │
-│   └───dev/
-│       │   
-│       └───client/
-│       │   
-│       └───server/
-│       │   │   
-│       │   └───storage/
-│       │   │   │        
-│       │   │   └───data.json
-│       │   │   
-│       │   │   Dockerfile
-│       │   └───test.http
-│       │ 
-│       │   .env
-│       └───docker-compose.yml
-│   
-└───server/
-│   │
-│   └───auth/
-│   │
-│   └───categories/
-│   │
-│   └───storage/
-│   │   │   
-│   │   └───filebased/
-│   │   │   
-│   │   └───redis/
-│   │   │
-│   │   └───storage.go
-│   │
-│   └───transactions/
-│   │
-│   │   go.mod
-│   │   main.go
-│   │   routes.go
-│   └───Taskfile.yml
-│
-└───README.md
+> final-project/
+    > client/         
+    > deploy/
+        > dev/
+            > client/
+            > server/
+                > storage/
+                    > data
+                    > sample_data
+                > Dockerfile
+                > test.http
+            > .env
+            > docker-compose.yml
+    > server/
+        > internal/
+            > auth/
+                > auth.go
+            > categories/
+                > categories.go
+            > transactions/
+                > create.go
+                > delete.go
+                > list.go
+                > retrieve.go
+                > transactions.go
+                > update.go
+        > pkg/
+            > http/
+                > handler.go
+                > responsewriter.go
+        > storage/
+            > filebased/
+                > category.go
+                > filebased.go
+                > session.go
+                > transaction.go
+                > user.go
+            > storage.go
+        > main.go
+        > routes.go
+    > go.mod
+    > go.sum
+    > README.md
 ```
 
 ## Dependencies

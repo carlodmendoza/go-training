@@ -1,18 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/carlodmendoza/go-training/final-project/server/storage/filebased"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	fmt.Println("Server running on port 8080")
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	log.Debug().Msg("Server running on port 8080")
 
 	sigChannel := make(chan os.Signal)
 	signal.Notify(sigChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) //nolint
@@ -25,13 +26,14 @@ func main() {
 		<-sigChannel
 		err := storage.Shutdown()
 		if err != nil {
-			fmt.Printf("Shutdown error: %s\n", err)
+			log.Error().Err(err).Msg("Shutdown error")
 		}
-		log.Fatalf("Shutting down the server")
+		// TODO: perform graceful shutdown
+		log.Fatal().Msg("Shutting down the server")
 	}()
 
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
-		log.Fatalf("Error ListenAndServe(): %s", err)
+		log.Error().Err(err).Msg(err.Error())
 	}
 }

@@ -6,9 +6,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"net/http"
+	gohttp "net/http"
 
+	"github.com/carlodmendoza/go-training/final-project/server/pkg/http"
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
@@ -23,88 +23,78 @@ type AuthRequest struct {
 
 var (
 	ErrDuplicateUser = errors.New("User already exists")
+	ErrEmptyFields   = errors.New("Username or password is empty")
 	ErrInvalidLogin  = errors.New("Invalid username or password")
 	ErrInvalidToken  = errors.New("Invalid or missing token")
 )
 
 // Signin handles a sign in request by a client.
 // Upon successful sign in, a generated token is given as a cookie to client for authorizing future requests.
-func Signin(db storage.Service, w http.ResponseWriter, r *http.Request) {
+func Signin(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
 	var signinReq AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&signinReq)
 	if err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return gohttp.StatusBadRequest, err
 	}
 
 	if signinReq.Username == "" || signinReq.Password == "" {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
-		http.Error(w, "Missing required fields.", http.StatusBadRequest)
-		return
+		return gohttp.StatusBadRequest, ErrEmptyFields
 	}
 
 	ok, err := db.AuthenticateUser(signinReq.Username, signinReq.Password)
 	if !ok {
-		http.Error(w, ErrInvalidLogin.Error(), http.StatusUnauthorized)
-		return
+		return gohttp.StatusUnauthorized, ErrInvalidLogin
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
 	token := generateSessionToken()
 	err = db.CreateSession(signinReq.Username, token)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	gohttp.SetCookie(rw.Writer(), &gohttp.Cookie{
 		Name:  "Token",
 		Value: token,
 	})
-	_, _ = w.Write([]byte("Logged in successfully!"))
+	_, _ = rw.WriteMessage("Logged in successfully!")
+
+	return gohttp.StatusOK, nil
 }
 
 // Signup handles a sign up request by a client.
 // It checks if an account already exists.
-func Signup(db storage.Service, w http.ResponseWriter, r *http.Request) {
+func Signup(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
 	var signupReq AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&signupReq)
 	if err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return gohttp.StatusBadRequest, err
 	}
 
 	if signupReq.Username == "" || signupReq.Password == "" {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
-		http.Error(w, "Missing required fields.", http.StatusBadRequest)
-		return
+		return gohttp.StatusBadRequest, ErrEmptyFields
 	}
 
 	exists, err := db.UserExists(signupReq.Username)
 	if exists {
-		http.Error(w, ErrDuplicateUser.Error(), http.StatusConflict)
-		return
+		return gohttp.StatusConflict, ErrDuplicateUser
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
 	err = db.CreateUser(signupReq.Username, signupReq.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write([]byte("Signed up successfully!"))
+	_, _ = rw.WriteMessage("Signed up successfully!")
+
+	return gohttp.StatusCreated, nil
 }
 
 // GenerateSessionToken returns a token for authorizing client requests.
@@ -120,37 +110,34 @@ func generateSessionToken() string {
 // Authenticator is a middleware that checks if token from a request cookie is associated to an existing session.
 // If yes, it passes the username to the request context then proceeds with the request.
 // If not, or no cookie is found, an error response is sent.
-func Authenticator(db storage.Service) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		hfn := func(w http.ResponseWriter, r *http.Request) {
+func Authenticator(db storage.Service) func(next gohttp.Handler) gohttp.Handler {
+	return func(next gohttp.Handler) gohttp.Handler {
+		hfn := func(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
 			tokenCookie, err := r.Cookie("Token")
 			if err != nil {
-				fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-				http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
-				return
+				return gohttp.StatusUnauthorized, ErrInvalidToken
 			}
 
 			session, err := db.FindSession(tokenCookie.Value)
 			if session.Username == "" {
-				http.Error(w, ErrInvalidToken.Error(), http.StatusUnauthorized)
-				return
+				return gohttp.StatusUnauthorized, ErrInvalidToken
 			}
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				return gohttp.StatusInternalServerError, err
 			}
 
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, UserKey, session.Username)
 
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(rw.Writer(), r.WithContext(ctx))
+			return gohttp.StatusContinue, nil
 		}
-		return http.HandlerFunc(hfn)
+		return http.Handler{Storage: db, Function: hfn}
 	}
 }
 
 // GetUser returns the username from a request context using UserKey as key.
-func GetUser(r *http.Request) string {
+func GetUser(r *gohttp.Request) string {
 	switch v := r.Context().Value(UserKey).(type) {
 	case string:
 		return v
