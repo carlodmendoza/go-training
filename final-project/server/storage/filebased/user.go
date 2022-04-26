@@ -4,10 +4,6 @@ import "github.com/carlodmendoza/go-training/final-project/server/storage"
 
 func (fdb *FilebasedDB) CreateUser(username, password string) error {
 	fdb.UserMux.Lock()
-	defer func() {
-		fdb.UserMux.Unlock()
-		appendData(fdb)
-	}()
 
 	fdb.NextUserID++
 	newUser := storage.User{
@@ -17,6 +13,13 @@ func (fdb *FilebasedDB) CreateUser(username, password string) error {
 		Transactions: map[int]struct{}{},
 	}
 	fdb.Users[username] = newUser
+
+	fdb.UserMux.Unlock()
+
+	err := appendData(fdb)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
