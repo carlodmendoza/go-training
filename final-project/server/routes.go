@@ -1,7 +1,6 @@
 package main
 
 import (
-	gohttp "net/http"
 	"time"
 
 	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
@@ -32,29 +31,15 @@ func GetRouter(db storage.Service) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.Authenticator(db))
 
-		r.Get("/categories", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			categories.ProcessCategories(db, w, r)
-		})
+		r.Method("GET", "/categories", http.Handler{Storage: db, Function: categories.ProcessCategories})
 
-		r.Get("/transactions", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			transactions.ListHandler(db, w, r)
-		})
-		r.Post("/transactions", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			transactions.CreateHandler(db, w, r)
-		})
-		r.Delete("/transactions", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			transactions.Purge(db, w, r)
-		})
+		r.Method("GET", "/transactions", http.Handler{Storage: db, Function: transactions.ListHandler})
+		r.Method("POST", "/transactions", http.Handler{Storage: db, Function: transactions.CreateHandler})
+		r.Method("DELETE", "/transactions", http.Handler{Storage: db, Function: transactions.Purge})
 
-		r.Get("/transactions/{id:[0-9]+}", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			transactions.RetrieveHandler(db, w, r)
-		})
-		r.Put("/transactions/{id:[0-9]+}", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			transactions.UpdateHandler(db, w, r)
-		})
-		r.Delete("/transactions/{id:[0-9]+}", func(w gohttp.ResponseWriter, r *gohttp.Request) {
-			transactions.DeleteHandler(db, w, r)
-		})
+		r.Method("GET", "/transactions/{id:[0-9]+}", http.Handler{Storage: db, Function: transactions.RetrieveHandler})
+		r.Method("PUT", "/transactions/{id:[0-9]+}", http.Handler{Storage: db, Function: transactions.UpdateHandler})
+		r.Method("DELETE", "/transactions/{id:[0-9]+}", http.Handler{Storage: db, Function: transactions.DeleteHandler})
 	})
 
 	return r

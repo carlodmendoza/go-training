@@ -2,33 +2,35 @@ package transactions
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"strconv"
 
+	gohttp "net/http"
+
 	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
+	"github.com/carlodmendoza/go-training/final-project/server/pkg/http"
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func RetrieveHandler(db storage.Service, w http.ResponseWriter, r *http.Request) {
+func RetrieveHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
 	username := auth.GetUser(r)
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	transaction, ok, err := db.FindTransaction(username, id)
 	if !ok {
-		http.Error(w, ErrTransactionNotFound.Error(), http.StatusNotFound)
-		return
+		return gohttp.StatusNotFound, ErrTransactionNotFound
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
-	err = json.NewEncoder(w).Encode(transaction)
+	out, err := json.Marshal(transaction)
 	if err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return gohttp.StatusInternalServerError, err
 	}
+
+	_, _ = rw.Write(out)
+
+	return gohttp.StatusOK, nil
 }

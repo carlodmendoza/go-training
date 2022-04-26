@@ -9,8 +9,14 @@ type ResponseWriter struct {
 	w http.ResponseWriter
 }
 
-func (rw *ResponseWriter) WriteMessage(data string) (int, error) {
-	resp, _ := json.Marshal(map[string]string{"message": data})
+func (rw *ResponseWriter) Write(data []byte) (int, error) {
+	rw.w.Header().Set("Content-Type", "application/json")
+
+	return rw.w.Write(data)
+}
+
+func (rw *ResponseWriter) WriteMessage(msg string) (int, error) {
+	resp, _ := json.Marshal(map[string]string{"message": msg})
 	rw.w.Header().Set("Content-Type", "application/json")
 
 	return rw.w.Write(resp)

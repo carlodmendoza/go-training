@@ -2,27 +2,26 @@ package transactions
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
+	gohttp "net/http"
 
 	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
+	"github.com/carlodmendoza/go-training/final-project/server/pkg/http"
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
-func CreateHandler(db storage.Service, w http.ResponseWriter, r *http.Request) {
+func CreateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
 	username := auth.GetUser(r)
 
 	var transactionReq TransactionRequest
 
 	err := json.NewDecoder(r.Body).Decode(&transactionReq)
 	if err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return gohttp.StatusBadRequest, err
 	}
 
-	if !validateTransactionRequest(db, w, r, transactionReq) {
-		return
+	status, err := validateHandler(db, rw, r, transactionReq)
+	if err != nil {
+		return status, err
 	}
 
 	transaction := storage.Transaction{
@@ -34,10 +33,10 @@ func CreateHandler(db storage.Service, w http.ResponseWriter, r *http.Request) {
 	}
 	err = db.CreateTransaction(transaction)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	_, _ = w.Write([]byte("Transaction added successfully!"))
+	_, _ = rw.WriteMessage("Transaction added successfully!")
+
+	return gohttp.StatusCreated, nil
 }

@@ -2,41 +2,39 @@ package transactions
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"strconv"
 
+	gohttp "net/http"
+
 	"github.com/carlodmendoza/go-training/final-project/server/internal/auth"
+	"github.com/carlodmendoza/go-training/final-project/server/pkg/http"
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func UpdateHandler(db storage.Service, w http.ResponseWriter, r *http.Request) {
+func UpdateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
 	username := auth.GetUser(r)
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	_, ok, err := db.FindTransaction(username, id)
 	if !ok {
-		http.Error(w, ErrTransactionNotFound.Error(), http.StatusNotFound)
-		return
+		return gohttp.StatusNotFound, ErrTransactionNotFound
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
 	var transactionReq TransactionRequest
 
 	err = json.NewDecoder(r.Body).Decode(&transactionReq)
 	if err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return gohttp.StatusBadRequest, err
 	}
 
-	if !validateTransactionRequest(db, w, r, transactionReq) {
-		return
+	status, err := validateHandler(db, rw, r, transactionReq)
+	if err != nil {
+		return status, err
 	}
 
 	transaction := storage.Transaction{
@@ -49,9 +47,10 @@ func UpdateHandler(db storage.Service, w http.ResponseWriter, r *http.Request) {
 	}
 	err = db.UpdateTransaction(transaction)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return gohttp.StatusInternalServerError, err
 	}
 
-	_, _ = w.Write([]byte("Transaction updated successfully!"))
+	_, _ = rw.WriteMessage("Transaction updated successfully!")
+
+	return gohttp.StatusCreated, nil
 }

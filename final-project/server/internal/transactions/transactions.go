@@ -2,11 +2,11 @@ package transactions
 
 import (
 	"errors"
-	"fmt"
-	"net/http"
+	gohttp "net/http"
 	"time"
 
 	"github.com/carlodmendoza/go-training/final-project/server/internal/categories"
+	"github.com/carlodmendoza/go-training/final-project/server/pkg/http"
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
@@ -19,33 +19,28 @@ type TransactionRequest struct {
 
 var (
 	ErrTransactionNotFound = errors.New("No transaction/s found")
+	ErrEmptyFields         = errors.New("Transaction amount, date, or category ID is empty")
 )
 
-// validateTransaction validates a POST or PUT transaction request.
+// validateHandler validates a POST or PUT transaction request.
 // It sends a message to the client if it is a bad request.
-func validateTransactionRequest(db storage.Service, w http.ResponseWriter, r *http.Request, transReq TransactionRequest) bool {
+func validateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request, transReq TransactionRequest) (int, error) {
 	if transReq.Amount == 0 || transReq.Date == "" || transReq.CategoryID == 0 {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, "Missing required fields.")
-		http.Error(w, "Missing required fields.", http.StatusBadRequest)
-		return false
+		return gohttp.StatusBadRequest, ErrEmptyFields
 	}
 
 	exists, err := db.CategoryExists(transReq.CategoryID)
 	if !exists {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, categories.ErrInvalidCategory)
-		http.Error(w, categories.ErrInvalidCategory.Error(), http.StatusNotFound)
-		return false
+		return gohttp.StatusNotFound, categories.ErrInvalidCategory
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
+		return gohttp.StatusInternalServerError, err
 	}
 
-	if _, err := time.Parse("01-02-2006", transReq.Date); err != nil {
-		fmt.Printf("Error in %s: %s\n", r.URL.Path, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
+	_, err = time.Parse("01-02-2006", transReq.Date)
+	if err != nil {
+		return gohttp.StatusBadRequest, err
 	}
 
-	return true
+	return gohttp.StatusContinue, nil
 }
