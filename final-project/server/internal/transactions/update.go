@@ -13,28 +13,28 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func UpdateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func UpdateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	username := auth.GetUser(r)
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	_, ok, err := db.FindTransaction(username, id)
 	if !ok {
-		return gohttp.StatusNotFound, ErrTransactionNotFound
+		return http.StatusError{Code: gohttp.StatusNotFound, Err: ErrTransactionNotFound}
 	}
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	var transactionReq TransactionRequest
 
 	err = json.NewDecoder(r.Body).Decode(&transactionReq)
 	if err != nil {
-		return gohttp.StatusBadRequest, err
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: err}
 	}
 
-	status, err := validateHandler(db, rw, r, transactionReq)
+	err = validateHandler(db, rw, r, transactionReq)
 	if err != nil {
-		return status, err
+		return err
 	}
 
 	transaction := storage.Transaction{
@@ -47,10 +47,10 @@ func UpdateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Reques
 	}
 	err = db.UpdateTransaction(transaction)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	_, _ = rw.WriteMessage("Transaction updated successfully!")
 
-	return gohttp.StatusCreated, nil
+	return nil
 }

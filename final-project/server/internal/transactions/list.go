@@ -9,20 +9,20 @@ import (
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
-func ListHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func ListHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	username := auth.GetUser(r)
 
 	transactions, err := db.GetTransactions(username)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	out, err := json.Marshal(transactions)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	_, _ = rw.Write(out)
 
-	return gohttp.StatusOK, nil
+	return nil
 }

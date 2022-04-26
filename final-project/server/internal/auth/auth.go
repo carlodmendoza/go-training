@@ -30,30 +30,30 @@ var (
 
 // Signin handles a sign in request by a client.
 // Upon successful sign in, a generated token is given as a cookie to client for authorizing future requests.
-func Signin(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func Signin(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	var signinReq AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&signinReq)
 	if err != nil {
-		return gohttp.StatusBadRequest, err
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: err}
 	}
 
 	if signinReq.Username == "" || signinReq.Password == "" {
-		return gohttp.StatusBadRequest, ErrEmptyFields
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: ErrEmptyFields}
 	}
 
 	ok, err := db.AuthenticateUser(signinReq.Username, signinReq.Password)
 	if !ok {
-		return gohttp.StatusUnauthorized, ErrInvalidLogin
+		return http.StatusError{Code: gohttp.StatusUnauthorized, Err: ErrInvalidLogin}
 	}
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	token := generateSessionToken()
 	err = db.CreateSession(signinReq.Username, token)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	gohttp.SetCookie(rw.Writer(), &gohttp.Cookie{
@@ -62,39 +62,40 @@ func Signin(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int
 	})
 	_, _ = rw.WriteMessage("Logged in successfully!")
 
-	return gohttp.StatusOK, nil
+	return nil
 }
 
 // Signup handles a sign up request by a client.
 // It checks if an account already exists.
-func Signup(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func Signup(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	var signupReq AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&signupReq)
 	if err != nil {
-		return gohttp.StatusBadRequest, err
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: err}
 	}
 
 	if signupReq.Username == "" || signupReq.Password == "" {
-		return gohttp.StatusBadRequest, ErrEmptyFields
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: ErrEmptyFields}
 	}
 
 	exists, err := db.UserExists(signupReq.Username)
 	if exists {
-		return gohttp.StatusConflict, ErrDuplicateUser
+		return http.StatusError{Code: gohttp.StatusConflict, Err: ErrDuplicateUser}
 	}
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	err = db.CreateUser(signupReq.Username, signupReq.Password)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
+	rw.WriteHeader(gohttp.StatusCreated)
 	_, _ = rw.WriteMessage("Signed up successfully!")
 
-	return gohttp.StatusCreated, nil
+	return nil
 }
 
 // GenerateSessionToken returns a token for authorizing client requests.
@@ -112,25 +113,25 @@ func generateSessionToken() string {
 // If not, or no cookie is found, an error response is sent.
 func Authenticator(db storage.Service) func(next gohttp.Handler) gohttp.Handler {
 	return func(next gohttp.Handler) gohttp.Handler {
-		hfn := func(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+		hfn := func(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 			tokenCookie, err := r.Cookie("Token")
 			if err != nil {
-				return gohttp.StatusUnauthorized, ErrInvalidToken
+				return http.StatusError{Code: gohttp.StatusUnauthorized, Err: ErrInvalidToken}
 			}
 
 			session, err := db.FindSession(tokenCookie.Value)
 			if session.Username == "" {
-				return gohttp.StatusUnauthorized, ErrInvalidToken
+				return http.StatusError{Code: gohttp.StatusUnauthorized, Err: ErrInvalidToken}
 			}
 			if err != nil {
-				return gohttp.StatusInternalServerError, err
+				return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 			}
 
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, UserKey, session.Username)
 
 			next.ServeHTTP(rw.Writer(), r.WithContext(ctx))
-			return gohttp.StatusContinue, nil
+			return nil
 		}
 		return http.Handler{Storage: db, Function: hfn}
 	}

@@ -24,23 +24,23 @@ var (
 
 // validateHandler validates a POST or PUT transaction request.
 // It sends a message to the client if it is a bad request.
-func validateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request, transReq TransactionRequest) (int, error) {
+func validateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request, transReq TransactionRequest) error {
 	if transReq.Amount == 0 || transReq.Date == "" || transReq.CategoryID == 0 {
-		return gohttp.StatusBadRequest, ErrEmptyFields
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: ErrEmptyFields}
 	}
 
 	exists, err := db.CategoryExists(transReq.CategoryID)
 	if !exists {
-		return gohttp.StatusNotFound, categories.ErrInvalidCategory
+		return http.StatusError{Code: gohttp.StatusNotFound, Err: categories.ErrInvalidCategory}
 	}
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	_, err = time.Parse("01-02-2006", transReq.Date)
 	if err != nil {
-		return gohttp.StatusBadRequest, err
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: err}
 	}
 
-	return gohttp.StatusContinue, nil
+	return nil
 }

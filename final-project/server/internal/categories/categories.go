@@ -15,18 +15,18 @@ var (
 
 // ProcessCategories handles a categories/ request by a client.
 // The client can get all categories.
-func ProcessCategories(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func ProcessCategories(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	categories, err := db.GetCategories()
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	out, err := json.Marshal(categories)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	_, _ = rw.Write(out)
 
-	return gohttp.StatusOK, nil
+	return nil
 }

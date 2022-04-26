@@ -13,24 +13,24 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func RetrieveHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func RetrieveHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	username := auth.GetUser(r)
 	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
 
 	transaction, ok, err := db.FindTransaction(username, id)
 	if !ok {
-		return gohttp.StatusNotFound, ErrTransactionNotFound
+		return http.StatusError{Code: gohttp.StatusNotFound, Err: ErrTransactionNotFound}
 	}
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	out, err := json.Marshal(transaction)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
 	_, _ = rw.Write(out)
 
-	return gohttp.StatusOK, nil
+	return nil
 }

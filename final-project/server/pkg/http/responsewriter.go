@@ -22,6 +22,13 @@ func (rw *ResponseWriter) WriteMessage(msg string) (int, error) {
 	return rw.w.Write(resp)
 }
 
+func (rw *ResponseWriter) WriteError(msg string) (int, error) {
+	resp, _ := json.Marshal(map[string]string{"error": msg})
+	rw.w.Header().Set("Content-Type", "application/json")
+
+	return rw.w.Write(resp)
+}
+
 func (rw *ResponseWriter) WriteHeader(statusCode int) {
 	rw.w.WriteHeader(statusCode)
 }

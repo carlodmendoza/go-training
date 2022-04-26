@@ -9,19 +9,19 @@ import (
 	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
-func CreateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) (int, error) {
+func CreateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Request) error {
 	username := auth.GetUser(r)
 
 	var transactionReq TransactionRequest
 
 	err := json.NewDecoder(r.Body).Decode(&transactionReq)
 	if err != nil {
-		return gohttp.StatusBadRequest, err
+		return http.StatusError{Code: gohttp.StatusBadRequest, Err: err}
 	}
 
-	status, err := validateHandler(db, rw, r, transactionReq)
+	err = validateHandler(db, rw, r, transactionReq)
 	if err != nil {
-		return status, err
+		return err
 	}
 
 	transaction := storage.Transaction{
@@ -33,10 +33,11 @@ func CreateHandler(db storage.Service, rw *http.ResponseWriter, r *gohttp.Reques
 	}
 	err = db.CreateTransaction(transaction)
 	if err != nil {
-		return gohttp.StatusInternalServerError, err
+		return http.StatusError{Code: gohttp.StatusInternalServerError, Err: err}
 	}
 
+	rw.WriteHeader(gohttp.StatusCreated)
 	_, _ = rw.WriteMessage("Transaction added successfully!")
 
-	return gohttp.StatusCreated, nil
+	return nil
 }
