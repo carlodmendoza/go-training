@@ -1,11 +1,9 @@
 version: "3.8"
 
 services:
-  client:
-    build: ./client
-    image: client:latest
   server:
-    build: ./server
-    image: server:latest
+    build: ../../
+    image: carlodmendoza/final-project-server:latest
+    env_file: .env
     ports:
-      - 8080:8080
+      - ${HTTP_PORT}:${HTTP_PORT}

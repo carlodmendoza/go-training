@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 	"github.com/carlodmendoza/go-training/final-project/server/storage/filebased"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -13,13 +15,18 @@ import (
 
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	log.Debug().Msg("Server running on port 8080")
+	log.Debug().Msg(fmt.Sprintf("Server running on port %v", os.Getenv("HTTP_PORT")))
 
 	sigChannel := make(chan os.Signal)
 	signal.Notify(sigChannel, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) //nolint
 
-	// TODO: create env var for file path and chosen storage service
-	storage := filebased.Initialize("../deploy/dev/server/storage/data")
+	var storage storage.Service
+	switch os.Getenv("STORAGE_SERVICE") {
+	case "filebased":
+		storage = filebased.Initialize(os.Getenv("FILE_STORAGE_PATH"))
+	case "redis":
+		// TODO: implement redis
+	}
 	r := GetRouter(storage)
 
 	go func() {
@@ -32,7 +39,7 @@ func main() {
 		log.Fatal().Msg("Shutting down the server")
 	}()
 
-	err := http.ListenAndServe(":8080", r)
+	err := http.ListenAndServe(fmt.Sprintf(":%v", os.Getenv("HTTP_PORT")), r)
 	if err != nil {
 		log.Error().Err(err).Msg(err.Error())
 	}

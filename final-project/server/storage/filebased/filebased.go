@@ -28,8 +28,9 @@ type FilebasedDB struct {
 func Initialize(filepath string) *FilebasedDB {
 	file, err := os.OpenFile(filepath, os.O_RDWR|os.O_APPEND, 0644)
 	if err != nil {
-		log.Error().Err(err).Msg("Open file error, using initial sample data")
-		file, _ = os.OpenFile(".data.example", os.O_RDWR|os.O_APPEND, 0644)
+		log.Error().Err(err).Msg("Open file error")
+		log.Debug().Msg("Using initial sample data")
+		file, _ = os.OpenFile("storage/filebased/.data.example", os.O_RDWR|os.O_APPEND, 0644)
 	}
 
 	decoder := json.NewDecoder(file)
