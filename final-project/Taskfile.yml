@@ -1,0 +1,32 @@
+# https://taskfile.dev
+
+version: '3'
+
+env:
+  ENV: dev
+
+vars:
+  NAME: final-project-{{.ENV}}
+  DOCKER_EXEC: docker compose -f deploy/{{.ENV}}/docker-compose.yml -p {{.NAME}} exec
+
+tasks:
+  default:
+    dir: deploy/{{.ENV}}
+    cmds:
+      - docker compose -p {{.NAME}} up -d --build
+    silent: true
+
+  logs:
+    desc: Show Docker logs
+    cmds:
+      - docker compose -f deploy/dev/docker-compose.yml -p {{.NAME}} logs --follow
+
+  stop-all:
+    desc: Stops and removes the docker containers
+    cmds:
+      - docker compose -p {{.NAME}} down --remove-orphans
+
+  go-shell:
+    desc: Enters the backend shell
+    cmds:
+      - "{{.DOCKER_EXEC}} server /bin/sh"

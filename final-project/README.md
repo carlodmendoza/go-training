@@ -13,10 +13,6 @@ The server and client are both written on Go, and run on Docker.
         > dev/
             > client/
             > server/
-                > storage/
-                    > data
-                    > sample_data
-                > Dockerfile
                 > test.http
             > .env
             > docker-compose.yml
@@ -35,10 +31,13 @@ The server and client are both written on Go, and run on Docker.
                 > update.go
         > pkg/
             > http/
+                > error.go
                 > handler.go
                 > responsewriter.go
         > storage/
             > filebased/
+                > .data 
+                > .data.example
                 > category.go
                 > filebased.go
                 > session.go
@@ -47,9 +46,11 @@ The server and client are both written on Go, and run on Docker.
             > storage.go
         > main.go
         > routes.go
+    > Dockerfile
     > go.mod
     > go.sum
     > README.md
+    > Taskfile.yml
 ```
 
 ## Dependencies
