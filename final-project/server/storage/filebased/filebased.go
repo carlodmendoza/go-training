@@ -45,7 +45,15 @@ func Initialize(filepath string) *FilebasedDB {
 			return lastScan
 		case err != nil:
 			log.Error().Err(err).Msg("Read file error")
-			return &FilebasedDB{File: file}
+			return &FilebasedDB{
+				File:              file,
+				Users:             map[string]storage.User{},
+				Sessions:          map[string]storage.Session{},
+				Categories:        map[int]storage.Category{},
+				Transactions:      map[int]storage.Transaction{},
+				NextUserID:        1,
+				NextTransactionID: 1,
+			}
 		}
 		lastScan = tempScan
 	}

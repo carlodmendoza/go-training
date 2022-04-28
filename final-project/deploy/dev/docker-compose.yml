@@ -10,9 +10,9 @@ services:
     ports:
       - ${HTTP_PORT}:${HTTP_PORT}
 
-  client:
-    build: 
-      context: ../../
-      dockerfile: Dockerfile-client
-    image: carlodmendoza/final-project-client:latest
-    env_file: .env
+  # client:
+  #   build: 
+  #     context: ../../
+  #     dockerfile: Dockerfile-client
+  #   image: carlodmendoza/final-project-client:latest
+  #   env_file: .env
