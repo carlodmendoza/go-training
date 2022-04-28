@@ -1,8 +1,9 @@
 package filebased
 
 import (
-	"server/storage"
 	"sort"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 func (fdb *FilebasedDB) GetCategories() ([]storage.Category, error) {

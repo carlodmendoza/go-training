@@ -1,11 +1,18 @@
 version: "3.8"
 
 services:
-  client:
-    build: ./client
-    image: client:latest
   server:
-    build: ./server
-    image: server:latest
+    build: 
+      context: ../../
+      dockerfile: Dockerfile-server
+    image: carlodmendoza/final-project-server:latest
+    env_file: .env
     ports:
-      - 8080:8080
+      - ${HTTP_PORT}:${HTTP_PORT}
+
+  client:
+    build: 
+      context: ../../
+      dockerfile: Dockerfile-client
+    image: carlodmendoza/final-project-client:latest
+    env_file: .env

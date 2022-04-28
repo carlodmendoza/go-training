@@ -1,16 +1,13 @@
 package filebased
 
 import (
-	"server/storage"
 	"sort"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 	fdb.TransactionMux.Lock()
-	defer func() {
-		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
-	}()
 
 	fdb.NextTransactionID++
 	newTransaction := storage.Transaction{
@@ -28,6 +25,13 @@ func (fdb *FilebasedDB) CreateTransaction(tr storage.Transaction) error {
 	user.Transactions[fdb.NextTransactionID] = struct{}{}
 	fdb.Users[tr.Username] = user
 	fdb.UserMux.Unlock()
+
+	fdb.TransactionMux.Unlock()
+
+	err := appendData(fdb)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -52,22 +56,19 @@ func (fdb *FilebasedDB) GetTransactions(username string) ([]storage.Transaction,
 
 func (fdb *FilebasedDB) UpdateTransaction(tr storage.Transaction) error {
 	fdb.TransactionMux.Lock()
-	defer func() {
-		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
-	}()
-
 	fdb.Transactions[tr.ID] = tr
+	fdb.TransactionMux.Unlock()
+
+	err := appendData(fdb)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
 	fdb.TransactionMux.Lock()
-	defer func() {
-		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
-	}()
 
 	fdb.UserMux.Lock()
 	user := fdb.Users[username]
@@ -82,21 +83,31 @@ func (fdb *FilebasedDB) DeleteTransactions(username string) (bool, error) {
 	fdb.Users[username] = user
 	fdb.UserMux.Unlock()
 
+	fdb.TransactionMux.Unlock()
+
+	err := appendData(fdb)
+	if err != nil {
+		return false, err
+	}
+
 	return true, nil
 }
 
 func (fdb *FilebasedDB) DeleteTransaction(username string, tid int) error {
 	fdb.TransactionMux.Lock()
-	defer func() {
-		fdb.TransactionMux.Unlock()
-		appendData(filePtr, fdb)
-	}()
 
 	delete(fdb.Transactions, tid)
 
 	fdb.UserMux.Lock()
 	delete(fdb.Users[username].Transactions, tid)
 	fdb.UserMux.Unlock()
+
+	fdb.TransactionMux.Unlock()
+
+	err := appendData(fdb)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

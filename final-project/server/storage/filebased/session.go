@@ -1,16 +1,13 @@
 package filebased
 
 import (
-	"server/storage"
 	"time"
+
+	"github.com/carlodmendoza/go-training/final-project/server/storage"
 )
 
 func (fdb *FilebasedDB) CreateSession(username, token string) error {
 	fdb.SessionMux.Lock()
-	defer func() {
-		fdb.SessionMux.Unlock()
-		appendData(filePtr, fdb)
-	}()
 
 	newSession := storage.Session{
 		Token:     token,
@@ -27,6 +24,13 @@ func (fdb *FilebasedDB) CreateSession(username, token string) error {
 	user.SessionToken = token
 	fdb.Users[username] = user
 	fdb.UserMux.Unlock()
+
+	fdb.SessionMux.Unlock()
+
+	err := appendData(fdb)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
