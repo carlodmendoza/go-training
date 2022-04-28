@@ -16,6 +16,17 @@ tasks:
       - docker compose -p {{.NAME}} up -d --build
     silent: true
 
+  backend-start:
+    desc: Start the backend service
+    # sources:
+    #   - server/internal/**/*.go
+    #   - server/pkg/**/*.go
+    #   - server/storage/**/*.go
+    #   - server/*.go
+    #   - go.*
+    cmds:
+      - go run ./server -mod=readonly
+
   logs:
     desc: Show Docker logs
     cmds:
