@@ -3,8 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"final-project/client/models"
-	"final-project/client/utils"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,6 +10,9 @@ import (
 	"os"
 	"text/tabwriter"
 	"time"
+
+	"github.com/carlodmendoza/go-training/final-project/client/models"
+	"github.com/carlodmendoza/go-training/final-project/client/utils"
 )
 
 /*
@@ -20,7 +21,7 @@ import (
 	Author: Carlo Mendoza
 */
 
-const baseURL = "http://server:8080/"
+var baseURL = fmt.Sprintf("%v:%v/", os.Getenv("SERVER_HOST"), os.Getenv("HTTP_PORT"))
 
 var cookie *http.Cookie
 var categories []models.Category

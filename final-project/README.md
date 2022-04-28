@@ -11,7 +11,6 @@ The server and client are both written on Go, and run on Docker.
     > client/         
     > deploy/
         > dev/
-            > client/
             > server/
                 > test.http
             > .env
@@ -46,7 +45,8 @@ The server and client are both written on Go, and run on Docker.
             > storage.go
         > main.go
         > routes.go
-    > Dockerfile
+    > Dockerfile-client
+    > Dockerfile-server
     > go.mod
     > go.sum
     > README.md

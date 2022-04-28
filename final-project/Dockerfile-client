@@ -1,0 +1,12 @@
+FROM golang:1.16-alpine 
+
+WORKDIR /final-project/client
+
+COPY go.mod go.sum ../
+COPY client/*.go ./
+COPY client/models/ ./models
+COPY client/utils/ ./utils
+
+RUN go build -o /client
+
+CMD ["/client"]
